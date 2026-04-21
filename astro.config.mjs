@@ -2,10 +2,12 @@ import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import vercel from "@astrojs/vercel";
-import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
+
+// Tailwind 4 loads via PostCSS (see postcss.config.mjs). The Vite plugin
+// `@tailwindcss/vite` is not compatible with Vite 7 (bundled by Astro 6).
 
 export default defineConfig({
   site: process.env.PUBLIC_SITE_URL ?? "https://jinba.example.com",
@@ -25,9 +27,6 @@ export default defineConfig({
       filter: (p) => !p.includes("/admin/"),
     }),
   ],
-  vite: {
-    plugins: [tailwindcss()],
-  },
   i18n: {
     defaultLocale: "es",
     locales: ["es", "en"],
