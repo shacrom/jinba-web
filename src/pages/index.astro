@@ -1,0 +1,6 @@
+---
+// Root redirect: always send visitors to the default locale (ES).
+// Astro's i18n routing with redirectToDefaultLocale handles this,
+// but we keep an explicit file for clarity and SSR edge compatibility.
+return Astro.redirect("/es/", 302);
+---

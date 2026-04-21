@@ -1,0 +1,65 @@
+---
+import { getMetaTags } from "@/lib/seo";
+import "@/styles/global.css";
+
+export interface Props {
+  title: string;
+  description: string;
+  locale: "es" | "en";
+  path: string; // e.g. "/es/modelos/mazda/mx-5/na"
+  image?: string; // absolute OG image URL
+  serif?: boolean; // load Fraunces for editorial pages
+}
+
+const { title, description, locale, path, image, serif = false } = Astro.props;
+const meta = getMetaTags({ title, description, locale, path, image });
+const plausibleDomain = import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN as string | undefined;
+---
+
+<!doctype html>
+<html lang={locale} data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1a1a1a" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{meta.title}</title>
+    <meta name="description" content={meta.description} />
+    <link rel="canonical" href={meta.canonical} />
+    {meta.alternates.map((a) => (
+      <link rel="alternate" hreflang={a.hreflang} href={a.href} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={meta.xDefault} />
+    <!-- Open Graph -->
+    <meta property="og:title" content={meta.title} />
+    <meta property="og:description" content={meta.description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={meta.canonical} />
+    <meta property="og:locale" content={locale === "es" ? "es_ES" : "en_US"} />
+    {meta.image && <meta property="og:image" content={meta.image} />}
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={meta.title} />
+    <meta name="twitter:description" content={meta.description} />
+    {meta.image && <meta name="twitter:image" content={meta.image} />}
+    <!-- Plausible Analytics (cookieless, injected only when domain is set) -->
+    {plausibleDomain && (
+      <script
+        is:inline
+        defer
+        data-domain={plausibleDomain}
+        src="https://plausible.io/js/script.js"
+      ></script>
+    )}
+    <!-- Theme bootstrap: apply stored preference before first paint to avoid FOUC -->
+    <script is:inline>
+      try {
+        const t = localStorage.getItem("theme");
+        if (t === "light") document.documentElement.dataset.theme = "light";
+      } catch (e) {}
+    </script>
+  </head>
+  <body data-serif={serif ? "true" : "false"}>
+    <slot />
+  </body>
+</html>

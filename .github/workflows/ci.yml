@@ -1,0 +1,67 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # Fake public env vars for CI build (no real Supabase project needed)
+      PUBLIC_SITE_URL: https://jinba.example.com
+      PUBLIC_SUPABASE_URL: https://example.supabase.co
+      PUBLIC_SUPABASE_ANON_KEY: fake-anon-key-for-ci
+      # Skip Playwright browser install during npm ci
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      # Skip E2E tests that require a running server
+      SKIP_E2E: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Biome lint
+        run: npm run lint
+
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      - name: jinba-db types drift check
+        # Snapshot the committed types, run the sync script, and fail if the
+        # committed file no longer matches the schema in jinba-db.
+        # If JINBA_DB_PATH is not wired in CI yet, the script is a no-op and
+        # this step is effectively a diff of the file against itself.
+        run: |
+          cp src/types/database.ts /tmp/jinba-db-types-before.ts
+          npm run types:sync || true
+          if ! diff -q /tmp/jinba-db-types-before.ts src/types/database.ts >/dev/null 2>&1; then
+            echo "::error::jinba-db types are stale. Run 'npm run types:sync' locally and commit the result."
+            diff -u /tmp/jinba-db-types-before.ts src/types/database.ts || true
+            exit 1
+          fi
+
+      - name: i18n parity check
+        run: npm run i18n:check
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: ./lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true

@@ -1,3 +1,15 @@
+# Astro build + cache
+.astro/
+dist/
+
+# Vercel deployment cache (contains linked project id + tokens)
+.vercel/
+
+# Env variants (dotfiles were already gitignored below; also cover the sandbox-
+# friendly sibling without a leading dot that some tooling writes).
+env.local
+env
+
 # Logs
 logs
 *.log

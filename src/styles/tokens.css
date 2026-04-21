@@ -1,0 +1,67 @@
+/*
+ * Jinba Design Tokens — Reference Catalog
+ *
+ * This file mirrors the @theme block from global.css as a documented reference.
+ * Import global.css for actual token usage — do NOT import this file in components.
+ *
+ * Usage in components:
+ *   CSS custom property: var(--color-accent)
+ *   Tailwind (where registered): bg-[var(--color-accent)]
+ */
+
+/*
+ * ── COLOR PALETTE (dark-first automotive) ──────────────────────────────────
+ *
+ * All colors use oklch() for perceptual uniformity and Tailwind 4 compatibility.
+ *
+ * --color-bg              oklch(0.15 0.01 260)   Deep charcoal — page background
+ * --color-fg              oklch(0.96 0.005 260)  Near-white — primary text
+ * --color-muted           oklch(0.42 0.015 260)  Dim grey — secondary text, placeholders
+ * --color-border          oklch(0.28 0.012 260)  Subtle border lines
+ * --color-card            oklch(0.19 0.012 260)  Card/surface background (slightly lighter than bg)
+ * --color-card-fg         oklch(0.96 0.005 260)  Card text (same as fg)
+ * --color-accent          oklch(0.65 0.18 35)    Warm amber — CTAs, active states
+ * --color-accent-fg       oklch(0.15 0.01 260)   Text on accent backgrounds
+ * --color-accent-hot      oklch(0.55 0.22 25)    Brake-light red — hover accent, alerts
+ * --color-ring            oklch(0.72 0.16 35)    Focus ring (amber, lighter than accent)
+ *
+ * Light override (applied via [data-theme="light"] on <html>):
+ * --color-bg              oklch(0.99 0.003 90)   Off-white cream
+ * --color-fg              oklch(0.18 0.012 260)  Near-black
+ * --color-muted           oklch(0.55 0.012 260)  Medium grey
+ * --color-border          oklch(0.90 0.008 260)  Light border
+ * --color-card            oklch(1 0 0)            Pure white card
+ * --color-card-fg         oklch(0.18 0.012 260)
+ * --color-accent-fg       oklch(1 0 0)            White text on amber (light mode)
+ */
+
+/*
+ * ── TYPOGRAPHY ─────────────────────────────────────────────────────────────
+ *
+ * --font-sans    "Inter Variable", ui-sans-serif, system-ui, sans-serif
+ *                Self-hosted via @fontsource-variable/inter (variable, no flash).
+ *                Primary UI font — all pages.
+ *
+ * --font-serif   "Fraunces Variable", ui-serif, Georgia, serif
+ *                Self-hosted via @fontsource-variable/fraunces.
+ *                Editorial feel — guide pages only (BaseLayout serif=true prop).
+ *
+ * --font-mono    "JetBrains Mono Variable", ui-monospace, Menlo, monospace
+ *                Self-hosted via @fontsource-variable/jetbrains-mono.
+ *                Code blocks, technical data.
+ */
+
+/*
+ * ── SPACING & RADII ────────────────────────────────────────────────────────
+ *
+ * --radius       0.5rem    Default border-radius (buttons, inputs, cards)
+ * --radius-lg    0.75rem   Larger cards, modals
+ * --radius-sm    0.25rem   Small badges, tags, focus rings
+ */
+
+/*
+ * ── SHADOWS ────────────────────────────────────────────────────────────────
+ *
+ * --shadow-card  0 1px 0 0 oklch(1 0 0 / 0.03), 0 4px 16px -8px oklch(0 0 0 / 0.4)
+ *                Subtle depth for card/panel surfaces.
+ */
