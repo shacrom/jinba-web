@@ -1,0 +1,52 @@
+---
+/**
+ * DetailSpecsTable.astro — T23
+ * Accessible specs dl for listing detail page.
+ * REQ-DETAIL-02.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+
+export interface Props {
+  year: number | null;
+  km: number | null;
+  price: number | null;
+  currency: string | null;
+  sourceDisplayName: string | null;
+  status: string | null;
+  locale: Locale;
+}
+
+const { year, km, price, currency, sourceDisplayName, status, locale } = Astro.props;
+const tr = t(locale);
+
+const fmtCurrency = new Intl.NumberFormat(locale === "es" ? "es-ES" : "en-US", {
+  style: "currency",
+  currency: currency ?? "EUR",
+  maximumFractionDigits: 0,
+});
+
+const fmtKm = km != null ? `${km.toLocaleString(locale === "es" ? "es-ES" : "en-US")} km` : "—";
+
+const specs = [
+  { label: tr("listings.detail.year"), value: year != null ? String(year) : "—" },
+  { label: tr("listings.detail.km"), value: fmtKm },
+  { label: tr("listings.detail.price"), value: price != null ? fmtCurrency.format(price) : "—" },
+  {
+    label: tr("listings.detail.source"),
+    value: sourceDisplayName ?? tr("listings.source.unknown"),
+  },
+  { label: tr("listings.detail.status"), value: status ?? "—" },
+];
+---
+
+<dl
+  class="grid grid-cols-2 gap-x-6 gap-y-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:grid-cols-3"
+>
+  {specs.map(({ label, value }) => (
+    <div>
+      <dt class="text-xs uppercase tracking-wide text-[var(--color-muted)]">{label}</dt>
+      <dd class="mt-1 text-lg font-semibold">{value}</dd>
+    </div>
+  ))}
+</dl>

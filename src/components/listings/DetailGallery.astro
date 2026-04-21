@@ -1,0 +1,95 @@
+---
+/**
+ * DetailGallery.astro — T21
+ * CSS scroll-snap gallery for detail page. Zero JS needed for scroll.
+ * GalleryKeyboard.tsx island layered on top for keyboard nav + aria-live.
+ * REQ-DETAIL-01, REQ-A11Y-01, REQ-A11Y-03, REQ-A11Y-04.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import { storageUrl } from "@/lib/supabase";
+import GalleryKeyboard from "./GalleryKeyboard.tsx";
+
+export interface Photo {
+  storage_path: string | null;
+  width: number | null;
+  height: number | null;
+  privacy_processed_at: string | null;
+}
+
+export interface Props {
+  photos: Photo[];
+  makeName: string;
+  modelName: string;
+  year: number | null;
+  locale: Locale;
+}
+
+const { photos, makeName, modelName, year, locale } = Astro.props;
+const tr = t(locale);
+
+const validPhotos = photos.filter((p) => p.storage_path != null && p.privacy_processed_at != null);
+
+const altBase = tr("listings.card.imgAlt")
+  .replace("{make}", makeName)
+  .replace("{model}", modelName)
+  .replace("{year}", String(year ?? ""));
+---
+
+{validPhotos.length > 0 && (
+  <section
+    class="relative overflow-hidden rounded-[var(--radius-lg)]"
+    aria-label={altBase}
+    id="gallery"
+  >
+    {/* Scroll-snap track */}
+    <div
+      id="gallery-track"
+      class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth"
+      style="scrollbar-width:none"
+    >
+      {validPhotos.map((photo, i) => (
+        <div
+          class="min-w-full snap-start"
+          id={`slide-${i}`}
+          role="group"
+          aria-label={tr("listings.gallery.slide")
+            .replace("{current}", String(i + 1))
+            .replace("{total}", String(validPhotos.length))}
+        >
+          <img
+            src={storageUrl(photo.storage_path!)}
+            alt={`${altBase} — ${i + 1} / ${validPhotos.length}`}
+            width={photo.width ?? 1200}
+            height={photo.height ?? 800}
+            loading={i === 0 ? "eager" : "lazy"}
+            fetchpriority={i === 0 ? "high" : undefined}
+            class="aspect-[16/9] w-full object-cover"
+          />
+        </div>
+      ))}
+    </div>
+
+    {/* Keyboard island — handles ← → and aria-live announcement */}
+    {validPhotos.length > 1 && (
+      <GalleryKeyboard
+        client:visible
+        totalSlides={validPhotos.length}
+        prevLabel={tr("listings.gallery.prev")}
+        nextLabel={tr("listings.gallery.next")}
+        slideLabel={tr("listings.gallery.slide")}
+      />
+    )}
+
+    {/* Dot indicators */}
+    {validPhotos.length > 1 && (
+      <div class="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5" aria-hidden="true">
+        {validPhotos.map((_, i) => (
+          <span
+            class={`h-1.5 w-1.5 rounded-full ${i === 0 ? "bg-white" : "bg-white/40"}`}
+          />
+        ))}
+      </div>
+    )}
+  </section>
+)}

@@ -1,0 +1,32 @@
+---
+/**
+ * ListingsEmpty.astro — T12
+ * Renders when 0 listings match. Shows i18n message + signup CTA.
+ * REQ-LIST-02, SC-01.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+
+export interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const tr = t(locale);
+---
+
+<section
+  class="flex flex-col items-center gap-6 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] py-20 text-center"
+  aria-live="polite"
+>
+  <div>
+    <h2 class="text-xl font-semibold">{tr("listings.empty.heading")}</h2>
+    <p class="mt-2 text-sm text-[var(--color-muted)]">{tr("listings.empty.body")}</p>
+  </div>
+  <a
+    href="/#signup"
+    class="inline-flex items-center rounded-[var(--radius)] bg-[var(--color-accent)] px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+  >
+    {tr("listings.empty.cta")}
+  </a>
+</section>

@@ -1,0 +1,286 @@
+---
+import ListingsEmpty from "@/components/listings/ListingsEmpty.astro";
+import ListingsFilterBar from "@/components/listings/ListingsFilterBar.astro";
+import ListingsFilterDrawer from "@/components/listings/ListingsFilterDrawer.tsx";
+import ListingsGrid from "@/components/listings/ListingsGrid.astro";
+import ListingsPagination from "@/components/listings/ListingsPagination.astro";
+/**
+ * src/pages/[lang]/[make]/[model]/[gen]/listings/index.astro — T19
+ * Segmented listing page. getStaticPaths emits 10 pages (5 gens × 2 locales).
+ * Generation pinned from URL — no gen filter visible in UI.
+ * REQ-ROUTE-02, REQ-ROUTE-04, REQ-FILTER-03, REQ-JSONLD-01, REQ-SEO-01, SC-09.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { buildItemListJsonLd } from "@/lib/jsonld";
+import {
+  PAGE_SIZE,
+  buildListingsQuery,
+  fetchPhotosForListings,
+  parseListingParams,
+} from "@/lib/listings-query";
+import { validateListingRows } from "@/lib/listings-schema";
+import { supabase } from "@/lib/supabase";
+
+interface SeedEntry {
+  make: string;
+  model: string;
+  gen: string;
+}
+
+interface GenTaxonomy {
+  id: number;
+  slug: string;
+  name_es: string;
+  name_en: string;
+  year_start: number;
+  year_end: number | null;
+  models: {
+    slug: string;
+    name_es: string;
+    name_en: string;
+    makes: { slug: string; name_es: string; name_en: string };
+  };
+}
+
+export async function getStaticPaths() {
+  const { readFileSync } = await import("node:fs");
+  const { resolve } = await import("node:path");
+  const { supabase: sb } = await import("@/lib/supabase");
+
+  function readSeed(): SeedEntry[] {
+    try {
+      const p = resolve("scripts/data/taxonomy-seed.json");
+      return JSON.parse(readFileSync(p, "utf8")) as SeedEntry[];
+    } catch {
+      return [];
+    }
+  }
+
+  function buildFallbackPaths(seed: SeedEntry[]) {
+    const paths: Array<{
+      params: Record<string, string>;
+      props: { g: GenTaxonomy; lang: Locale };
+    }> = [];
+    let idCounter = 1;
+    for (const entry of seed) {
+      const g: GenTaxonomy = {
+        id: idCounter++,
+        slug: entry.gen,
+        name_es: entry.gen.toUpperCase(),
+        name_en: entry.gen.toUpperCase(),
+        year_start: 1980,
+        year_end: null,
+        models: {
+          slug: entry.model,
+          name_es: entry.model,
+          name_en: entry.model,
+          makes: { slug: entry.make, name_es: entry.make, name_en: entry.make },
+        },
+      };
+      for (const lang of ["es", "en"] as Locale[]) {
+        paths.push({
+          params: { lang, make: entry.make, model: entry.model, gen: entry.gen },
+          props: { g, lang },
+        });
+      }
+    }
+    return paths;
+  }
+
+  let rows: GenTaxonomy[] = [];
+  if (sb) {
+    try {
+      const { data, error } = await sb.from("generations").select(`
+        id, slug, name_es, name_en, year_start, year_end,
+        models!inner ( slug, name_es, name_en, makes!inner ( slug, name_es, name_en ) )
+      `);
+      if (!error && data && data.length > 0) {
+        rows = data as unknown as GenTaxonomy[];
+      }
+    } catch {
+      // fall through to seed
+    }
+  }
+
+  if (rows.length > 0) {
+    const paths: Array<{
+      params: Record<string, string>;
+      props: { g: GenTaxonomy; lang: Locale };
+    }> = [];
+    for (const g of rows) {
+      if (!g.models?.makes) continue;
+      for (const lang of ["es", "en"] as Locale[]) {
+        paths.push({
+          params: { lang, make: g.models.makes.slug, model: g.models.slug, gen: g.slug },
+          props: { g, lang },
+        });
+      }
+    }
+    return paths;
+  }
+
+  return buildFallbackPaths(readSeed());
+}
+
+// ── Page props ────────────────────────────────────────────────────────────────
+
+const { g, lang } = Astro.props as { g: GenTaxonomy; lang: Locale };
+const tr = t(lang);
+
+const name = (x: { name_es: string; name_en: string }) => (lang === "es" ? x.name_es : x.name_en);
+const makeName = name(g.models.makes);
+const modelName = name(g.models);
+const genName = name(g);
+
+const path = `/${lang}/${g.models.makes.slug}/${g.models.slug}/${g.slug}/listings/`;
+
+const title = tr("listings.segmented.pageTitle")
+  .replace("{make}", makeName)
+  .replace("{model}", modelName)
+  .replace("{gen}", genName);
+
+const description = tr("listings.segmented.pageDescription")
+  .replace("{make}", makeName)
+  .replace("{model}", modelName)
+  .replace("{gen}", genName);
+
+// Parse params — gen is pinned from the route, not from query params
+const params = parseListingParams(Object.fromEntries(Astro.url.searchParams.entries()));
+
+// ── Fetch listings ────────────────────────────────────────────────────────────
+let rawListings: unknown[] = [];
+
+if (supabase) {
+  try {
+    const q = buildListingsQuery(supabase, params, g.id);
+    const { data } = await q;
+    rawListings = data ?? [];
+  } catch {
+    // empty state
+  }
+}
+
+const validated = validateListingRows(rawListings);
+const hasNextPage = validated.length > PAGE_SIZE;
+const pageListings = hasNextPage ? validated.slice(0, PAGE_SIZE) : validated;
+
+const listingIds = pageListings.map((l) => l.id).filter((id): id is number => id != null);
+const photos = supabase ? await fetchPhotosForListings(supabase, listingIds) : new Map();
+
+const nextCursor =
+  hasNextPage && pageListings.length > 0
+    ? (pageListings[pageListings.length - 1].id ?? null)
+    : null;
+
+const site = (import.meta.env.PUBLIC_SITE_URL as string | undefined) ?? "https://jinba.example.com";
+const jsonLd = buildItemListJsonLd(
+  pageListings.map((l, i) => ({
+    url: new URL(`/${lang}/listings/${l.id}/`, site).toString(),
+    name: [makeName, modelName, genName, l.year].filter(Boolean).join(" "),
+    position: i + 1,
+  })),
+  new URL(path, site).toString(),
+  title
+);
+
+const currentParamsRecord: Record<string, string> = {};
+for (const [k, v] of Astro.url.searchParams.entries()) {
+  if (k !== "cursor") currentParamsRecord[k] = v;
+}
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  locale={lang}
+  path={path}
+  jsonLd={jsonLd ?? undefined}
+>
+  <main class="mx-auto max-w-6xl px-4 pb-16">
+    {/* Breadcrumb */}
+    <nav aria-label="breadcrumb" class="py-4 text-sm text-[var(--color-muted)]">
+      <ol class="flex flex-wrap items-center gap-1">
+        <li><a href={`/${lang}/`} class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]">{tr("nav.home")}</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href={`/${lang}/${g.models.makes.slug}/`} class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]">{makeName}</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href={`/${lang}/${g.models.makes.slug}/${g.models.slug}/${g.slug}/`} class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]">{genName}</a></li>
+        <li aria-hidden="true">›</li>
+        <li><span aria-current="page">{tr("listings.breadcrumb.listings")}</span></li>
+      </ol>
+    </nav>
+
+    <h1 class="mb-2 text-3xl font-bold">{makeName} {modelName} {genName}</h1>
+    <p class="mb-6 text-sm text-[var(--color-muted)]">{tr("listings.breadcrumb.listings")}</p>
+
+    {/* Mobile filter drawer — no gen control (REQ-ROUTE-02) */}
+    <div class="mb-4 lg:hidden">
+      <ListingsFilterDrawer
+        client:load
+        action={path}
+        labels={{
+          open: tr("listings.filter.openDrawer"),
+          close: tr("listings.filter.closeDrawer"),
+          heading: tr("listings.filter.heading"),
+          priceMin: tr("listings.filter.priceMin"),
+          priceMax: tr("listings.filter.priceMax"),
+          yearMin: tr("listings.filter.yearMin"),
+          yearMax: tr("listings.filter.yearMax"),
+          kmMax: tr("listings.filter.kmMax"),
+          sortLabel: tr("listings.sort.label"),
+          sortLastSeen: tr("listings.sort.lastSeen"),
+          sortPriceAsc: tr("listings.sort.priceAsc"),
+          sortPriceDesc: tr("listings.sort.priceDesc"),
+          apply: tr("listings.filter.apply"),
+          clear: tr("listings.filter.clear"),
+        }}
+        initialValues={{
+          price_min: params.price_min,
+          price_max: params.price_max,
+          year_min: params.year_min,
+          year_max: params.year_max,
+          km_max: params.km_max,
+          sort: params.sort,
+        }}
+        pinnedGen={g.slug}
+      />
+    </div>
+
+    {/* Desktop filter bar — pinnedGen prevents gen filter from appearing */}
+    <div class="mb-6">
+      <ListingsFilterBar
+        locale={lang}
+        params={params}
+        action={path}
+        pinnedGen={g.slug}
+      />
+    </div>
+
+    {pageListings.length === 0 ? (
+      <ListingsEmpty locale={lang} />
+    ) : (
+      <>
+        <ListingsGrid
+          listings={pageListings}
+          photos={photos}
+          sourceNames={new Map()}
+          makeName={makeName}
+          modelName={modelName}
+          locale={lang}
+        />
+        <div class="mt-8">
+          <ListingsPagination
+            locale={lang}
+            baseUrl={path}
+            currentParams={currentParamsRecord}
+            nextCursor={nextCursor}
+            prevCursor={params.cursor ?? null}
+            hasNextPage={hasNextPage}
+          />
+        </div>
+      </>
+    )}
+  </main>
+</BaseLayout>

@@ -1,0 +1,102 @@
+---
+/**
+ * ListingCard.astro — T10
+ * Displays a single listing with thumbnail, price, year, km, location, source badge.
+ * REQ-LIST-01, REQ-LIST-04, REQ-A11Y-04.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import { storageUrl } from "@/lib/supabase";
+import ListingSourceBadge from "./ListingSourceBadge.astro";
+
+export interface Props {
+  id: number;
+  price: number | null;
+  currency: string | null;
+  year: number | null;
+  km: number | null;
+  locationText: string | null;
+  url: string | null;
+  sourceId: number | null;
+  sourceDisplayName?: string | null;
+  photoStoragePath: string | null;
+  makeName: string;
+  modelName: string;
+  locale: Locale;
+}
+
+const {
+  id,
+  price,
+  currency,
+  year,
+  km,
+  locationText,
+  url,
+  sourceId,
+  sourceDisplayName,
+  photoStoragePath,
+  makeName,
+  modelName,
+  locale,
+} = Astro.props;
+
+const tr = t(locale);
+
+const imgUrl = photoStoragePath ? storageUrl(photoStoragePath) : "/placeholders/listing.webp";
+
+const altText = tr("listings.card.imgAlt")
+  .replace("{make}", makeName)
+  .replace("{model}", modelName)
+  .replace("{year}", String(year ?? ""));
+
+const fmtCurrency = new Intl.NumberFormat(locale === "es" ? "es-ES" : "en-US", {
+  style: "currency",
+  currency: currency ?? "EUR",
+  maximumFractionDigits: 0,
+});
+
+const fmtKm = km != null ? km.toLocaleString(locale === "es" ? "es-ES" : "en-US") : null;
+
+const href = url ?? "#";
+---
+
+<a
+  href={href}
+  target="_blank"
+  rel="external noopener"
+  data-track="listing-click"
+  data-listing-id={id}
+  class="group block overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] transition-shadow hover:shadow-[var(--shadow-card)] hover:ring-2 hover:ring-[var(--color-ring)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+  aria-label={altText}
+>
+  <div class="aspect-[4/3] overflow-hidden">
+    <img
+      src={imgUrl}
+      alt={altText}
+      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+      loading="lazy"
+      width={400}
+      height={300}
+    />
+  </div>
+  <div class="p-3">
+    <p class="text-lg font-semibold leading-tight">
+      {price != null ? fmtCurrency.format(price) : "—"}
+    </p>
+    <p class="mt-1 text-xs text-[var(--color-muted)]">
+      {year ?? "—"}
+      {fmtKm ? ` · ${fmtKm} km` : ""}
+    </p>
+    {locationText && (
+      <p class="truncate text-xs text-[var(--color-muted)]">{locationText}</p>
+    )}
+    <div class="mt-2">
+      <ListingSourceBadge
+        sourceId={sourceId}
+        displayName={sourceDisplayName}
+        locale={locale}
+      />
+    </div>
+  </div>
+</a>

@@ -54,6 +54,57 @@ export const DictSchema = z.object({
   "seo.modelPageTitle": z.string(),
   "seo.defaultDescription": z.string(),
   "section.comingSoon": z.string(),
+
+  // ── listings pages (M3 — 30+ new keys) ──
+  "listings.pageTitle": z.string(),
+  "listings.pageDescription": z.string(),
+  "listings.segmented.pageTitle": z.string(),
+  "listings.segmented.pageDescription": z.string(),
+  "listings.detail.pageTitle": z.string(),
+  "listings.detail.pageDescription": z.string(),
+  // filter labels
+  "listings.filter.heading": z.string(),
+  "listings.filter.priceMin": z.string(),
+  "listings.filter.priceMax": z.string(),
+  "listings.filter.yearMin": z.string(),
+  "listings.filter.yearMax": z.string(),
+  "listings.filter.kmMax": z.string(),
+  "listings.filter.status": z.string(),
+  "listings.filter.source": z.string(),
+  "listings.filter.apply": z.string(),
+  "listings.filter.clear": z.string(),
+  "listings.filter.openDrawer": z.string(),
+  "listings.filter.closeDrawer": z.string(),
+  // sort labels
+  "listings.sort.label": z.string(),
+  "listings.sort.lastSeen": z.string(),
+  "listings.sort.priceAsc": z.string(),
+  "listings.sort.priceDesc": z.string(),
+  // empty state
+  "listings.empty.heading": z.string(),
+  "listings.empty.body": z.string(),
+  "listings.empty.cta": z.string(),
+  // pagination
+  "listings.pagination.prev": z.string(),
+  "listings.pagination.next": z.string(),
+  "listings.pagination.page": z.string(),
+  // detail specs
+  "listings.detail.year": z.string(),
+  "listings.detail.km": z.string(),
+  "listings.detail.price": z.string(),
+  "listings.detail.source": z.string(),
+  "listings.detail.status": z.string(),
+  "listings.detail.extCta": z.string(),
+  // gallery
+  "listings.gallery.slide": z.string(),
+  "listings.gallery.prev": z.string(),
+  "listings.gallery.next": z.string(),
+  // source badge
+  "listings.source.unknown": z.string(),
+  // card alt text
+  "listings.card.imgAlt": z.string(),
+  // breadcrumb
+  "listings.breadcrumb.listings": z.string(),
 });
 
 export type Dict = z.infer<typeof DictSchema>;
@@ -109,4 +160,58 @@ export const es = DictSchema.parse({
   "seo.defaultDescription":
     "Datos, precios en vivo, guía de compra, fallos típicos y modificaciones.",
   "section.comingSoon": "Contenido próximamente.",
+
+  // ── listings pages (M3) ──
+  "listings.pageTitle": "Anuncios de coches de segunda mano | Jinba",
+  "listings.pageDescription":
+    "Explora todos los anuncios de coches de segunda mano en Jinba. Filtra por precio, año, kilómetros y más.",
+  "listings.segmented.pageTitle": "{make} {model} {gen} — Anuncios | Jinba",
+  "listings.segmented.pageDescription":
+    "Todos los anuncios de {make} {model} {gen} en venta. Filtra por precio, año y kilómetros.",
+  "listings.detail.pageTitle": "{make} {model} {year} — Anuncio | Jinba",
+  "listings.detail.pageDescription":
+    "Ver anuncio: {make} {model} {year}, {price}. {km} km. {location}.",
+  // filter labels
+  "listings.filter.heading": "Filtros",
+  "listings.filter.priceMin": "Precio mín.",
+  "listings.filter.priceMax": "Precio máx.",
+  "listings.filter.yearMin": "Año mín.",
+  "listings.filter.yearMax": "Año máx.",
+  "listings.filter.kmMax": "Km máx.",
+  "listings.filter.status": "Estado",
+  "listings.filter.source": "Portal",
+  "listings.filter.apply": "Aplicar filtros",
+  "listings.filter.clear": "Limpiar",
+  "listings.filter.openDrawer": "Abrir filtros",
+  "listings.filter.closeDrawer": "Cerrar filtros",
+  // sort labels
+  "listings.sort.label": "Ordenar",
+  "listings.sort.lastSeen": "Más recientes",
+  "listings.sort.priceAsc": "Precio: menor a mayor",
+  "listings.sort.priceDesc": "Precio: mayor a menor",
+  // empty state
+  "listings.empty.heading": "Sin anuncios",
+  "listings.empty.body": "No hay anuncios que coincidan con tus filtros ahora mismo.",
+  "listings.empty.cta": "Avísame cuando haya",
+  // pagination
+  "listings.pagination.prev": "Anterior",
+  "listings.pagination.next": "Siguiente",
+  "listings.pagination.page": "Página {page}",
+  // detail specs
+  "listings.detail.year": "Año",
+  "listings.detail.km": "Kilómetros",
+  "listings.detail.price": "Precio",
+  "listings.detail.source": "Portal",
+  "listings.detail.status": "Estado",
+  "listings.detail.extCta": "Ver anuncio original",
+  // gallery
+  "listings.gallery.slide": "{current} / {total}",
+  "listings.gallery.prev": "Foto anterior",
+  "listings.gallery.next": "Foto siguiente",
+  // source badge
+  "listings.source.unknown": "Portal",
+  // card alt text
+  "listings.card.imgAlt": "Foto de {make} {model} {year}",
+  // breadcrumb
+  "listings.breadcrumb.listings": "Anuncios",
 });

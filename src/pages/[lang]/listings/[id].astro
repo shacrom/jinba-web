@@ -1,0 +1,206 @@
+---
+/**
+ * src/pages/[lang]/listings/[id].astro — T20
+ * SSR listing detail page. export const prerender = false.
+ * REQ-ROUTE-03, REQ-DATA-03/04/05, REQ-DETAIL-01/02/03/04,
+ * REQ-JSONLD-02, SC-06.
+ */
+export const prerender = false;
+
+import DetailExternalCTA from "@/components/listings/DetailExternalCTA.astro";
+import DetailGallery from "@/components/listings/DetailGallery.astro";
+import DetailSpecsTable from "@/components/listings/DetailSpecsTable.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { buildOfferJsonLd } from "@/lib/jsonld";
+import { validateListingRows } from "@/lib/listings-schema";
+import { supabase } from "@/lib/supabase";
+import type { Database } from "@/types/database";
+
+const { lang, id: idParam } = Astro.params as { lang: string; id: string };
+
+// Validate locale
+if (lang !== "es" && lang !== "en") {
+  return Astro.redirect("/es/");
+}
+const locale = lang as Locale;
+const tr = t(locale);
+
+// Parse id — must be a positive integer
+const id = Number.parseInt(idParam, 10);
+if (!id || id <= 0) {
+  return new Response(null, { status: 404 });
+}
+
+// ── Fetch listing ─────────────────────────────────────────────────────────────
+type ListingPublicRow = Database["public"]["Views"]["listings_public"]["Row"];
+type ListingPhotoRow = Database["public"]["Tables"]["listing_photos"]["Row"];
+
+let listingRaw: ListingPublicRow | null = null;
+let photos: ListingPhotoRow[] = [];
+let sourceDisplayName: string | null = null;
+
+if (supabase) {
+  try {
+    const { data } = await supabase
+      .from("listings_public")
+      .select(
+        "id, price, currency, year, km, location_text, url, last_seen_at, source_id, status, generation_id, make_id, model_id"
+      )
+      .eq("id", id)
+      .single();
+    listingRaw = data ?? null;
+  } catch {
+    listingRaw = null;
+  }
+
+  if (listingRaw) {
+    // Fetch photos with privacy_processed_at IS NOT NULL (REQ-DATA-05 dual defense)
+    try {
+      const { data: photoData } = await supabase
+        .from("listing_photos")
+        .select(
+          "id, listing_id, storage_path, width, height, privacy_processed_at, position, source_url, checksum, created_at"
+        )
+        .eq("listing_id", id)
+        .not("privacy_processed_at", "is", null)
+        .order("position", { ascending: true });
+      photos = (photoData ?? []) as ListingPhotoRow[];
+    } catch {
+      photos = [];
+    }
+
+    // Fetch source display name
+    if (listingRaw.source_id != null) {
+      try {
+        const { data: sourceData } = await supabase
+          .from("sources_public")
+          .select("display_name")
+          .eq("id", listingRaw.source_id)
+          .single();
+        sourceDisplayName =
+          (sourceData as { display_name: string | null } | null)?.display_name ?? null;
+      } catch {
+        sourceDisplayName = null;
+      }
+    }
+  }
+}
+
+// 404 when listing not found (REQ-ROUTE-03, SC-06)
+if (!listingRaw) {
+  return new Response(
+    `<!doctype html><html lang="${locale}"><body><h1>404</h1><p>${locale === "es" ? "Anuncio no encontrado." : "Listing not found."}</p></body></html>`,
+    {
+      status: 404,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    }
+  );
+}
+
+// Validate the row shape (REQ-DATA-04)
+const [validated] = validateListingRows([listingRaw]);
+if (!validated) {
+  return new Response(null, { status: 500 });
+}
+
+// ── Build page metadata ───────────────────────────────────────────────────────
+const site = (import.meta.env.PUBLIC_SITE_URL as string | undefined) ?? "https://jinba.example.com";
+const path = `/${locale}/listings/${id}/`;
+
+const fmtPrice =
+  validated.price != null
+    ? new Intl.NumberFormat(locale === "es" ? "es-ES" : "en-US", {
+        style: "currency",
+        currency: validated.currency ?? "EUR",
+        maximumFractionDigits: 0,
+      }).format(validated.price)
+    : "—";
+
+const title = tr("listings.detail.pageTitle")
+  .replace("{make}", String(validated.make_id ?? ""))
+  .replace("{model}", String(validated.model_id ?? ""))
+  .replace("{year}", String(validated.year ?? ""));
+
+const descriptionRaw = tr("listings.detail.pageDescription")
+  .replace("{make}", String(validated.make_id ?? ""))
+  .replace("{model}", String(validated.model_id ?? ""))
+  .replace("{year}", String(validated.year ?? ""))
+  .replace("{price}", fmtPrice)
+  .replace("{km}", validated.km != null ? String(validated.km) : "—")
+  .replace("{location}", validated.location_text ?? "");
+
+// JSON-LD Offer (REQ-JSONLD-02 — omit when price null)
+const jsonLd = buildOfferJsonLd({
+  price: validated.price,
+  currency: validated.currency ?? "EUR",
+  url: new URL(path, site).toString(),
+  name: `${validated.year ?? ""} — ${fmtPrice}`,
+});
+
+const firstPhotoUrl = photos[0]?.storage_path
+  ? `${(import.meta.env.PUBLIC_SUPABASE_URL as string | undefined) ?? ""}/storage/v1/object/public/listing-photos/${photos[0].storage_path}`
+  : undefined;
+
+// Vercel Cache-Control header for SSR (REQ-ROUTE-03)
+Astro.response.headers.set("Cache-Control", "s-maxage=300, stale-while-revalidate=3600");
+---
+
+<BaseLayout
+  title={title}
+  description={descriptionRaw}
+  locale={locale}
+  path={path}
+  image={firstPhotoUrl}
+  jsonLd={jsonLd ?? undefined}
+>
+  <main class="mx-auto max-w-4xl px-4 pb-16">
+    {/* Breadcrumb */}
+    <nav aria-label="breadcrumb" class="py-4 text-sm text-[var(--color-muted)]">
+      <ol class="flex flex-wrap items-center gap-1">
+        <li><a href={`/${locale}/`} class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]">{tr("nav.home")}</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href={`/${locale}/listings/`} class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]">{tr("listings.breadcrumb.listings")}</a></li>
+        <li aria-hidden="true">›</li>
+        <li><span aria-current="page">{String(validated.year ?? id)}</span></li>
+      </ol>
+    </nav>
+
+    <h1 class="mb-6 text-2xl font-bold md:text-3xl">
+      {[validated.year, fmtPrice].filter(Boolean).join(" · ")}
+    </h1>
+
+    {/* Gallery (REQ-DETAIL-01) */}
+    <div class="mb-8">
+      <DetailGallery
+        photos={photos.map((p) => ({
+          storage_path: p.storage_path,
+          width: p.width,
+          height: p.height,
+          privacy_processed_at: p.privacy_processed_at,
+        }))}
+        makeName={String(validated.make_id ?? "")}
+        modelName={String(validated.model_id ?? "")}
+        year={validated.year}
+        locale={locale}
+      />
+    </div>
+
+    {/* External CTA (REQ-DETAIL-03) */}
+    <div class="mb-8">
+      <DetailExternalCTA url={validated.url} locale={locale} />
+    </div>
+
+    {/* Specs table (REQ-DETAIL-02) */}
+    <DetailSpecsTable
+      year={validated.year}
+      km={validated.km}
+      price={validated.price}
+      currency={validated.currency}
+      sourceDisplayName={sourceDisplayName}
+      status={validated.status}
+      locale={locale}
+    />
+  </main>
+</BaseLayout>

@@ -1,0 +1,175 @@
+---
+import ListingsEmpty from "@/components/listings/ListingsEmpty.astro";
+import ListingsFilterBar from "@/components/listings/ListingsFilterBar.astro";
+import ListingsFilterDrawer from "@/components/listings/ListingsFilterDrawer.tsx";
+import ListingsGrid from "@/components/listings/ListingsGrid.astro";
+import ListingsPagination from "@/components/listings/ListingsPagination.astro";
+/**
+ * src/pages/[lang]/listings/index.astro — T18
+ * Index listing page. getStaticPaths emits 2 pages (es + en).
+ * Falls back to taxonomy-seed.json when Supabase is absent (CI).
+ * REQ-ROUTE-01, REQ-ROUTE-04, REQ-ROUTE-05, REQ-FILTER-01/02/03/04,
+ * REQ-PAGI-01/02, REQ-JSONLD-01, REQ-SEO-01, SC-01, SC-09, SC-10.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { buildItemListJsonLd } from "@/lib/jsonld";
+import {
+  PAGE_SIZE,
+  buildListingsQuery,
+  fetchPhotosForListings,
+  parseListingParams,
+} from "@/lib/listings-query";
+import { validateListingRows } from "@/lib/listings-schema";
+import { supabase } from "@/lib/supabase";
+
+export async function getStaticPaths() {
+  return [
+    { params: { lang: "es" }, props: { lang: "es" as Locale } },
+    { params: { lang: "en" }, props: { lang: "en" as Locale } },
+  ];
+}
+
+const { lang } = Astro.props as { lang: Locale };
+const tr = t(lang);
+
+const path = `/${lang}/listings/`;
+const title = tr("listings.pageTitle");
+const description = tr("listings.pageDescription");
+
+// Parse + validate query params (REQ-FILTER-02 W-05 fix)
+const params = parseListingParams(Object.fromEntries(Astro.url.searchParams.entries()));
+
+// ── Fetch listings ────────────────────────────────────────────────────────────
+let rawListings: unknown[] = [];
+
+if (supabase) {
+  try {
+    const q = buildListingsQuery(supabase, params);
+    const { data } = await q;
+    rawListings = data ?? [];
+  } catch {
+    // Supabase unreachable — empty state
+  }
+}
+
+const validated = validateListingRows(rawListings);
+const hasNextPage = validated.length > PAGE_SIZE;
+const pageListings = hasNextPage ? validated.slice(0, PAGE_SIZE) : validated;
+
+// Fetch photos for this page
+const listingIds = pageListings.map((l) => l.id).filter((id): id is number => id != null);
+const photos = supabase ? await fetchPhotosForListings(supabase, listingIds) : new Map();
+
+// Cursor for pagination
+const nextCursor =
+  hasNextPage && pageListings.length > 0
+    ? (pageListings[pageListings.length - 1].id ?? null)
+    : null;
+
+// Build ItemList JSON-LD (REQ-JSONLD-01 — only when listings exist)
+const site = (import.meta.env.PUBLIC_SITE_URL as string | undefined) ?? "https://jinba.example.com";
+const jsonLd = buildItemListJsonLd(
+  pageListings.map((l, i) => ({
+    url: new URL(`/${lang}/listings/${l.id}/`, site).toString(),
+    name: [l.year, "km", l.km, l.price, l.currency].filter(Boolean).join(" "),
+    position: i + 1,
+  })),
+  new URL(path, site).toString(),
+  title
+);
+
+const currentParamsRecord: Record<string, string> = {};
+for (const [k, v] of Astro.url.searchParams.entries()) {
+  if (k !== "cursor") currentParamsRecord[k] = v;
+}
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  locale={lang}
+  path={path}
+  jsonLd={jsonLd ?? undefined}
+>
+  <main class="mx-auto max-w-6xl px-4 pb-16">
+    {/* Breadcrumb */}
+    <nav aria-label="breadcrumb" class="py-4 text-sm text-[var(--color-muted)]">
+      <ol class="flex flex-wrap items-center gap-1">
+        <li><a href={`/${lang}/`} class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]">{tr("nav.home")}</a></li>
+        <li aria-hidden="true">›</li>
+        <li><span aria-current="page">{tr("listings.breadcrumb.listings")}</span></li>
+      </ol>
+    </nav>
+
+    <h1 class="mb-6 text-3xl font-bold">{tr("listings.breadcrumb.listings")}</h1>
+
+    {/* Mobile filter drawer island (REQ-LIST-03) */}
+    <div class="mb-4 lg:hidden">
+      <ListingsFilterDrawer
+        client:load
+        action={path}
+        labels={{
+          open: tr("listings.filter.openDrawer"),
+          close: tr("listings.filter.closeDrawer"),
+          heading: tr("listings.filter.heading"),
+          priceMin: tr("listings.filter.priceMin"),
+          priceMax: tr("listings.filter.priceMax"),
+          yearMin: tr("listings.filter.yearMin"),
+          yearMax: tr("listings.filter.yearMax"),
+          kmMax: tr("listings.filter.kmMax"),
+          sortLabel: tr("listings.sort.label"),
+          sortLastSeen: tr("listings.sort.lastSeen"),
+          sortPriceAsc: tr("listings.sort.priceAsc"),
+          sortPriceDesc: tr("listings.sort.priceDesc"),
+          apply: tr("listings.filter.apply"),
+          clear: tr("listings.filter.clear"),
+        }}
+        initialValues={{
+          price_min: params.price_min,
+          price_max: params.price_max,
+          year_min: params.year_min,
+          year_max: params.year_max,
+          km_max: params.km_max,
+          sort: params.sort,
+        }}
+      />
+    </div>
+
+    {/* Desktop filter bar */}
+    <div class="mb-6">
+      <ListingsFilterBar
+        locale={lang}
+        params={params}
+        action={path}
+      />
+    </div>
+
+    {/* Listings grid or empty state */}
+    {pageListings.length === 0 ? (
+      <ListingsEmpty locale={lang} />
+    ) : (
+      <>
+        <ListingsGrid
+          listings={pageListings}
+          photos={photos}
+          sourceNames={new Map()}
+          makeName=""
+          modelName=""
+          locale={lang}
+        />
+        <div class="mt-8">
+          <ListingsPagination
+            locale={lang}
+            baseUrl={path}
+            currentParams={currentParamsRecord}
+            nextCursor={nextCursor}
+            prevCursor={params.cursor ?? null}
+            hasNextPage={hasNextPage}
+          />
+        </div>
+      </>
+    )}
+  </main>
+</BaseLayout>

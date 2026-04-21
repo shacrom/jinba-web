@@ -1,0 +1,59 @@
+---
+/**
+ * ListingsGrid.astro — T11
+ * Responsive grid wrapper that maps listing rows to ListingCard.
+ */
+import type { Locale } from "@/i18n/config";
+import type { ValidatedListingRow } from "@/lib/listings-schema";
+import ListingCard from "./ListingCard.astro";
+
+export interface Props {
+  listings: ValidatedListingRow[];
+  photos: Map<
+    number,
+    {
+      storage_path: string | null;
+      width: number | null;
+      height: number | null;
+      privacy_processed_at: string | null;
+    } | null
+  >;
+  sourceNames: Map<number, string>;
+  makeName: string;
+  modelName: string;
+  locale: Locale;
+}
+
+const { listings, photos, sourceNames, makeName, modelName, locale } = Astro.props;
+---
+
+<ul
+  class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+  aria-label="listings"
+>
+  {listings.map((listing) => {
+    const photo = listing.id != null ? (photos.get(listing.id) ?? null) : null;
+    const sourceName = listing.source_id != null
+      ? (sourceNames.get(listing.source_id) ?? null)
+      : null;
+    return (
+      <li>
+        <ListingCard
+          id={listing.id ?? 0}
+          price={listing.price}
+          currency={listing.currency}
+          year={listing.year}
+          km={listing.km}
+          locationText={listing.location_text}
+          url={listing.url}
+          sourceId={listing.source_id}
+          sourceDisplayName={sourceName}
+          photoStoragePath={photo?.storage_path ?? null}
+          makeName={makeName}
+          modelName={modelName}
+          locale={locale}
+        />
+      </li>
+    );
+  })}
+</ul>

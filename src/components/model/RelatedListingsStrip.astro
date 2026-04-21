@@ -12,9 +12,17 @@ export interface Props {
   generationId: number;
   limit?: number;
   locale: Locale;
+  /** Slug segments for the "view all" link to the segmented listings page (T26). */
+  makeSlug?: string;
+  modelSlug?: string;
+  genSlug?: string;
 }
 
-const { generationId, limit = 3, locale } = Astro.props;
+const { generationId, limit = 3, locale, makeSlug, modelSlug, genSlug } = Astro.props;
+const viewAllHref =
+  makeSlug && modelSlug && genSlug
+    ? `/${locale}/${makeSlug}/${modelSlug}/${genSlug}/listings/`
+    : null;
 const tr = t(locale);
 
 const supabaseBase = import.meta.env.PUBLIC_SUPABASE_URL as string;
@@ -104,5 +112,16 @@ if (supabase) {
         );
       })}
     </div>
+    {/* T26: view all link to segmented listings page */}
+    {viewAllHref && (
+      <div class="mt-4 text-right">
+        <a
+          href={viewAllHref}
+          class="text-sm font-medium text-[var(--color-accent)] hover:underline focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+        >
+          {tr("model.related.view_all")} →
+        </a>
+      </div>
+    )}
   </section>
 )}

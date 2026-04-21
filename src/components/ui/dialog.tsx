@@ -7,9 +7,11 @@ export interface DialogProps {
   title?: string;
   children: React.ReactNode;
   className?: string;
+  /** Accessible label for the close button. Pass an i18n string (e.g. t(locale)("listings.filter.closeDrawer")). */
+  closeLabel?: string;
 }
 
-export function Dialog({ open, onClose, title, children, className }: DialogProps) {
+export function Dialog({ open, onClose, title, children, className, closeLabel }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
       <button
         type="button"
         onClick={onClose}
-        aria-label="Close dialog"
+        aria-label={closeLabel ?? "Close"}
         className="absolute right-4 top-4 rounded-[var(--radius-sm)] p-1 text-[var(--color-muted)] hover:text-[var(--color-fg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
       >
         ×

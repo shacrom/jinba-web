@@ -1,0 +1,66 @@
+---
+/**
+ * ListingsPagination.astro — T16
+ * Keyset pagination prev/next links.
+ * REQ-PAGI-01, REQ-PAGI-02.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+
+export interface Props {
+  locale: Locale;
+  baseUrl: string;
+  /** Query string params to carry forward (without cursor) */
+  currentParams: Record<string, string>;
+  /** The id of the last listing on this page (for next page cursor) */
+  nextCursor: number | null;
+  /** The id of the first listing on this page (for prev page — null on page 1) */
+  prevCursor: number | null;
+  hasNextPage: boolean;
+}
+
+const { locale, baseUrl, currentParams, nextCursor, prevCursor, hasNextPage } = Astro.props;
+const tr = t(locale);
+
+function buildUrl(cursor?: number | null): string {
+  const params = new URLSearchParams(currentParams);
+  params.delete("cursor");
+  if (cursor != null) params.set("cursor", String(cursor));
+  const qs = params.toString();
+  return qs ? `${baseUrl}?${qs}` : baseUrl;
+}
+
+const nextUrl = hasNextPage && nextCursor != null ? buildUrl(nextCursor) : null;
+const prevUrl = prevCursor != null ? buildUrl(prevCursor) : null;
+---
+
+{(prevUrl || nextUrl) && (
+  <nav
+    class="flex items-center justify-between border-t border-[var(--color-border)] pt-6"
+    aria-label="pagination"
+  >
+    {prevUrl ? (
+      <a
+        href={prevUrl}
+        class="inline-flex items-center gap-2 rounded-[var(--radius)] border border-[var(--color-border)] px-4 py-2 text-sm transition-colors hover:bg-[var(--color-card)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+        rel="prev"
+      >
+        ← {tr("listings.pagination.prev")}
+      </a>
+    ) : (
+      <span />
+    )}
+
+    {nextUrl ? (
+      <a
+        href={nextUrl}
+        class="inline-flex items-center gap-2 rounded-[var(--radius)] border border-[var(--color-border)] px-4 py-2 text-sm transition-colors hover:bg-[var(--color-card)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+        rel="next"
+      >
+        {tr("listings.pagination.next")} →
+      </a>
+    ) : (
+      <span />
+    )}
+  </nav>
+)}

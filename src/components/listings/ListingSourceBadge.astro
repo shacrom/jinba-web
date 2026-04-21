@@ -1,0 +1,24 @@
+---
+/**
+ * ListingSourceBadge.astro — T13
+ * Renders a badge showing the listing source portal name.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+
+export interface Props {
+  sourceId: number | null;
+  displayName?: string | null;
+  locale: Locale;
+}
+
+const { displayName, locale } = Astro.props;
+const tr = t(locale);
+const label = displayName ?? tr("listings.source.unknown");
+---
+
+<span
+  class="inline-flex items-center rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted)]"
+>
+  {label}
+</span>

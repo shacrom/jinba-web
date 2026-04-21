@@ -220,7 +220,7 @@ const findSection = (section: "overview" | "buying-guide" | "common-faults" | "m
       e.data.model === g.models.slug &&
       e.data.generation === g.slug &&
       e.data.locale === lang &&
-      e.data.section === section,
+      e.data.section === section
   );
 const overviewEntry = findSection("overview");
 const buyingEntry = findSection("buying-guide");
@@ -332,10 +332,8 @@ const ogImage =
   path={path}
   image={ogImage}
   serif={true}
+  jsonLd={jsonLd}
 >
-  <Fragment slot="head">
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
-  </Fragment>
 
   <main class="mx-auto max-w-6xl px-4 pb-16">
     {/* Breadcrumb (REQ-SEO-01, visible nav) */}
@@ -428,7 +426,14 @@ const ogImage =
         </section>
 
         {/* Related listings */}
-        <RelatedListingsStrip generationId={g.id} limit={3} locale={lang} />
+        <RelatedListingsStrip
+          generationId={g.id}
+          limit={3}
+          locale={lang}
+          makeSlug={g.models.makes.slug}
+          modelSlug={g.models.slug}
+          genSlug={g.slug}
+        />
 
       </article>
     </div>

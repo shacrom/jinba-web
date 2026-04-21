@@ -1,5 +1,6 @@
 import type { Locale } from "@/i18n/config";
 import { altLocale, altPath } from "@/i18n/config";
+import type { Thing, WithContext } from "schema-dts";
 
 interface GetMetaTagsOptions {
   title: string;
@@ -7,6 +8,11 @@ interface GetMetaTagsOptions {
   locale: Locale;
   path: string;
   image?: string;
+  /**
+   * Optional JSON-LD object(s) to embed in <head>.
+   * BaseLayout wraps these in a single @graph script tag (W-03 fix).
+   */
+  jsonLd?: WithContext<Thing> | WithContext<Thing>[];
 }
 
 interface HreflangAlternate {
@@ -21,13 +27,14 @@ interface MetaTags {
   alternates: HreflangAlternate[];
   xDefault: string;
   image?: string;
+  jsonLd?: WithContext<Thing> | WithContext<Thing>[];
 }
 
 /**
  * Compute all SEO meta tags for a given page.
  *
  * Returns canonical URL, hreflang alternates (es-ES + en-US + x-default),
- * OG/Twitter data, and image. All URLs are absolute.
+ * OG/Twitter data, image, and optional JSON-LD. All URLs are absolute.
  */
 export function getMetaTags({
   title,
@@ -35,6 +42,7 @@ export function getMetaTags({
   locale,
   path,
   image,
+  jsonLd,
 }: GetMetaTagsOptions): MetaTags {
   const site =
     (import.meta.env?.PUBLIC_SITE_URL as string | undefined) ?? "https://jinba.example.com";
@@ -52,5 +60,5 @@ export function getMetaTags({
   // x-default always points to the ES (primary) version
   const xDefault = new URL(altPath(path, "es"), site).toString();
 
-  return { title, description, canonical, alternates, xDefault, image };
+  return { title, description, canonical, alternates, xDefault, image, jsonLd };
 }

@@ -1,0 +1,149 @@
+---
+/**
+ * ListingsFilterBar.astro — T14
+ * Server-rendered desktop filter controls (price, year, km, status, sort).
+ * Filters submitted as GET params so the URL reflects filter state (REQ-FILTER-03).
+ * REQ-LIST-03, REQ-FILTER-01.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import type { ListingParams } from "@/lib/listings-query";
+
+export interface Props {
+  locale: Locale;
+  params: ListingParams;
+  action: string;
+  /** When set, this hidden gen value pins the generation (segmented route). */
+  pinnedGen?: string;
+}
+
+const { locale, params, action, pinnedGen } = Astro.props;
+const tr = t(locale);
+---
+
+<form
+  method="get"
+  action={action}
+  class="hidden lg:flex flex-wrap items-end gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-4"
+  aria-label={tr("listings.filter.heading")}
+>
+  {/* Pinned gen — hidden on segmented route */}
+  {pinnedGen && <input type="hidden" name="gen" value={pinnedGen} />}
+
+  {/* Price range */}
+  <div class="flex flex-col gap-1">
+    <label class="text-xs text-[var(--color-muted)]" for="price_min">
+      {tr("listings.filter.priceMin")}
+    </label>
+    <input
+      id="price_min"
+      name="price_min"
+      type="number"
+      min="0"
+      step="500"
+      value={params.price_min ?? ""}
+      placeholder="0"
+      class="w-28 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+    />
+  </div>
+  <div class="flex flex-col gap-1">
+    <label class="text-xs text-[var(--color-muted)]" for="price_max">
+      {tr("listings.filter.priceMax")}
+    </label>
+    <input
+      id="price_max"
+      name="price_max"
+      type="number"
+      min="0"
+      step="500"
+      value={params.price_max ?? ""}
+      placeholder="—"
+      class="w-28 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+    />
+  </div>
+
+  {/* Year range */}
+  <div class="flex flex-col gap-1">
+    <label class="text-xs text-[var(--color-muted)]" for="year_min">
+      {tr("listings.filter.yearMin")}
+    </label>
+    <input
+      id="year_min"
+      name="year_min"
+      type="number"
+      min="1950"
+      max="2030"
+      value={params.year_min ?? ""}
+      placeholder="—"
+      class="w-24 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+    />
+  </div>
+  <div class="flex flex-col gap-1">
+    <label class="text-xs text-[var(--color-muted)]" for="year_max">
+      {tr("listings.filter.yearMax")}
+    </label>
+    <input
+      id="year_max"
+      name="year_max"
+      type="number"
+      min="1950"
+      max="2030"
+      value={params.year_max ?? ""}
+      placeholder="—"
+      class="w-24 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+    />
+  </div>
+
+  {/* KM max */}
+  <div class="flex flex-col gap-1">
+    <label class="text-xs text-[var(--color-muted)]" for="km_max">
+      {tr("listings.filter.kmMax")}
+    </label>
+    <input
+      id="km_max"
+      name="km_max"
+      type="number"
+      min="0"
+      step="10000"
+      value={params.km_max ?? ""}
+      placeholder="—"
+      class="w-28 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+    />
+  </div>
+
+  {/* Sort */}
+  <div class="flex flex-col gap-1">
+    <label class="text-xs text-[var(--color-muted)]" for="sort">
+      {tr("listings.sort.label")}
+    </label>
+    <select
+      id="sort"
+      name="sort"
+      class="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+    >
+      <option value="last_seen_at_desc" selected={!params.sort || params.sort === "last_seen_at_desc"}>
+        {tr("listings.sort.lastSeen")}
+      </option>
+      <option value="price_asc" selected={params.sort === "price_asc"}>
+        {tr("listings.sort.priceAsc")}
+      </option>
+      <option value="price_desc" selected={params.sort === "price_desc"}>
+        {tr("listings.sort.priceDesc")}
+      </option>
+    </select>
+  </div>
+
+  {/* Actions */}
+  <button
+    type="submit"
+    class="rounded-[var(--radius)] bg-[var(--color-accent)] px-4 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+  >
+    {tr("listings.filter.apply")}
+  </button>
+  <a
+    href={action}
+    class="rounded-[var(--radius)] border border-[var(--color-border)] px-4 py-1.5 text-sm text-[var(--color-muted)] transition-colors hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+  >
+    {tr("listings.filter.clear")}
+  </a>
+</form>

@@ -37,3 +37,13 @@ export const supabaseAdmin: SupabaseClient<Database> | null =
         auth: { persistSession: false, autoRefreshToken: false },
       })
     : null;
+
+/**
+ * Compose a full public Supabase Storage URL from a relative storage path.
+ * Falls back to a placeholder when PUBLIC_SUPABASE_URL is not set (CI).
+ */
+export function storageUrl(path: string, bucket = "listing-photos"): string {
+  const base = (import.meta.env.PUBLIC_SUPABASE_URL as string | undefined) ?? "";
+  if (!base) return "/placeholders/listing.webp";
+  return `${base}/storage/v1/object/public/${bucket}/${path}`;
+}

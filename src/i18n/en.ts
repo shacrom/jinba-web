@@ -51,6 +51,60 @@ export const en: Dict = DictSchema.parse({
   "seo.modelPageTitle": "{gen} — Prices & Spec | Jinba",
   "seo.defaultDescription": "Data, live prices, buying guide, common faults and modifications.",
   "section.comingSoon": "Content coming soon.",
+
+  // ── listings pages (M3) ──
+  "listings.pageTitle": "Used car listings | Jinba",
+  "listings.pageDescription":
+    "Browse all used car listings on Jinba. Filter by price, year, mileage and more.",
+  "listings.segmented.pageTitle": "{make} {model} {gen} — Listings | Jinba",
+  "listings.segmented.pageDescription":
+    "All {make} {model} {gen} listings for sale. Filter by price, year and mileage.",
+  "listings.detail.pageTitle": "{make} {model} {year} — Listing | Jinba",
+  "listings.detail.pageDescription":
+    "View listing: {make} {model} {year}, {price}. {km} km. {location}.",
+  // filter labels
+  "listings.filter.heading": "Filters",
+  "listings.filter.priceMin": "Min price",
+  "listings.filter.priceMax": "Max price",
+  "listings.filter.yearMin": "Min year",
+  "listings.filter.yearMax": "Max year",
+  "listings.filter.kmMax": "Max km",
+  "listings.filter.status": "Status",
+  "listings.filter.source": "Portal",
+  "listings.filter.apply": "Apply filters",
+  "listings.filter.clear": "Clear",
+  "listings.filter.openDrawer": "Open filters",
+  "listings.filter.closeDrawer": "Close filters",
+  // sort labels
+  "listings.sort.label": "Sort",
+  "listings.sort.lastSeen": "Most recent",
+  "listings.sort.priceAsc": "Price: low to high",
+  "listings.sort.priceDesc": "Price: high to low",
+  // empty state
+  "listings.empty.heading": "No listings",
+  "listings.empty.body": "No listings match your current filters.",
+  "listings.empty.cta": "Notify me when there are",
+  // pagination
+  "listings.pagination.prev": "Previous",
+  "listings.pagination.next": "Next",
+  "listings.pagination.page": "Page {page}",
+  // detail specs
+  "listings.detail.year": "Year",
+  "listings.detail.km": "Mileage",
+  "listings.detail.price": "Price",
+  "listings.detail.source": "Portal",
+  "listings.detail.status": "Status",
+  "listings.detail.extCta": "View original listing",
+  // gallery
+  "listings.gallery.slide": "{current} / {total}",
+  "listings.gallery.prev": "Previous photo",
+  "listings.gallery.next": "Next photo",
+  // source badge
+  "listings.source.unknown": "Portal",
+  // card alt text
+  "listings.card.imgAlt": "Photo of {make} {model} {year}",
+  // breadcrumb
+  "listings.breadcrumb.listings": "Listings",
 });
 
 const DICTS = { es, en } as const satisfies Record<Locale, Dict>;
