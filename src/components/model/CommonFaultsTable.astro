@@ -1,0 +1,68 @@
+---
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+/**
+ * CommonFaultsTable.astro — T22
+ * Server-rendered faults table with severity badges.
+ * REQ-EDIT-04.
+ */
+import type { FaultEntry } from "@/lib/model-types";
+
+export interface Props {
+  faults: FaultEntry[];
+  locale: Locale;
+}
+
+const { faults, locale } = Astro.props;
+const tr = t(locale);
+
+type SeverityKey = "low" | "med" | "high";
+const severityClasses: Record<SeverityKey, string> = {
+  low: "bg-[var(--color-border)] text-[var(--color-muted)]",
+  med: "bg-[var(--color-accent)] text-[var(--color-accent-fg)]",
+  high: "bg-[var(--color-accent-hot)] text-white",
+};
+---
+
+{faults.length > 0 && (
+  <div class="mt-6 overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)]">
+    <table class="min-w-full text-sm">
+      <caption class="sr-only">{tr("model.faults.heading")}</caption>
+      <thead>
+        <tr class="border-b border-[var(--color-border)] bg-[var(--color-card)]">
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)]">
+            {tr("model.faults.heading")}
+          </th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)]">
+            {tr("model.faults.severity.low")} / {tr("model.faults.severity.med")} / {tr("model.faults.severity.high")}
+          </th>
+          <th scope="col" class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)]">
+            €
+          </th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-[var(--color-border)]">
+        {faults.map((fault) => (
+          <tr class="bg-[var(--color-card)] hover:bg-[var(--color-border)]">
+            <td class="px-4 py-3">
+              <p class="font-medium">{fault.description}</p>
+              <p class="mt-0.5 text-xs text-[var(--color-muted)]">{fault.frequency}</p>
+            </td>
+            <td class="px-4 py-3">
+              <span
+                class={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${severityClasses[fault.severity]}`}
+              >
+                {tr(`model.faults.severity.${fault.severity}` as "model.faults.severity.low")}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-right font-mono text-xs">
+              {fault.cost_eur_min > 0 || fault.cost_eur_max > 0
+                ? `${fault.cost_eur_min}–${fault.cost_eur_max} €`
+                : "—"}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}

@@ -1,0 +1,71 @@
+---
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+/**
+ * SpecBand.astro — T19
+ * Renders trim specifications. Single trim = <dl>; multiple = chip list.
+ * REQ-SPEC-01 through REQ-SPEC-04.
+ */
+import type { TrimDisplay } from "@/lib/model-types";
+
+export interface Props {
+  trims: TrimDisplay[];
+  locale: Locale;
+}
+
+const { trims, locale } = Astro.props;
+const tr = t(locale);
+
+const powerUnit = locale === "es" ? "CV" : "hp";
+---
+
+{trims.length === 0 ? null : trims.length === 1 ? (
+  /* Single trim: definition list (REQ-SPEC-04) */
+  <div class="mt-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] px-6 py-4">
+    <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)]">
+      {trims[0].name}
+    </p>
+    <dl class="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3">
+      <div>
+        <dt class="text-xs text-[var(--color-muted)]">{tr("model.spec.power")}</dt>
+        <dd class="mt-0.5 font-semibold">
+          {trims[0].powerHp !== null
+            ? `${trims[0].powerHp} ${powerUnit}`
+            : tr("model.spec.notAvailable")}
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs text-[var(--color-muted)]">{tr("model.spec.engine")}</dt>
+        <dd class="mt-0.5 font-mono text-sm">
+          {trims[0].engineCode ?? tr("model.spec.notAvailable")}
+        </dd>
+      </div>
+    </dl>
+  </div>
+) : (
+  /* Multiple trims: horizontal scrollable chip list (REQ-SPEC-04) */
+  <div class="mt-4 overflow-x-auto">
+    <ul
+      role="tablist"
+      aria-label={tr("model.spec.engine")}
+      class="flex gap-3 pb-2"
+    >
+      {trims.map((trim, idx) => (
+        <li
+          role="tab"
+          tabindex={idx === 0 ? 0 : -1}
+          aria-selected={idx === 0}
+          class="flex-shrink-0 cursor-default rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+        >
+          <span class="font-medium">{trim.name}</span>
+          <span class="ml-2 text-[var(--color-muted)]">
+            {trim.powerHp !== null ? `${trim.powerHp} ${powerUnit}` : tr("model.spec.notAvailable")}
+          </span>
+          {trim.engineCode && (
+            <span class="ml-2 font-mono text-xs text-[var(--color-muted)]">{trim.engineCode}</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+)}

@@ -42,5 +42,7 @@ export default defineConfig({
   },
   image: {
     service: { entrypoint: "astro/assets/services/sharp" },
+    // T29: Whitelist Supabase Storage for remote images via astro:assets
+    remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }],
   },
 });

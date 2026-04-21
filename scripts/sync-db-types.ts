@@ -28,7 +28,7 @@ for (const c of candidates) {
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(
     target,
-    `// AUTO-SYNCED from ${c} — do not edit by hand\n// Run \`npm run types:sync\` to refresh.\n${content}`,
+    `// AUTO-SYNCED from ${c} — do not edit by hand\n// Run \`npm run types:sync\` to refresh.\n${content}`
   );
   console.log(`types:sync OK — copied from ${abs}`);
   process.exit(0);

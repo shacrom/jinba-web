@@ -1,0 +1,81 @@
+---
+/**
+ * LivePriceStats.astro — T24
+ * Build-time Supabase query for price_aggregates_daily.
+ * REQ-PRICE-01 through REQ-PRICE-05.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import { aggregateStats } from "@/lib/stats";
+import { supabase } from "@/lib/supabase";
+
+export interface Props {
+  generationId: number;
+  currency?: string;
+  locale: Locale;
+}
+
+const { generationId, currency = "EUR", locale } = Astro.props;
+const tr = t(locale);
+
+const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+
+let stats = null;
+if (supabase) {
+  try {
+    const { data: rows } = await supabase
+      .from("price_aggregates_daily")
+      .select("count, median, p25, p75")
+      .eq("generation_id", generationId)
+      .eq("currency", currency)
+      .gte("date", thirtyDaysAgo);
+
+    stats = aggregateStats(rows ?? []);
+  } catch {
+    // Supabase unavailable (CI with fake keys) — renders empty state
+  }
+}
+
+const hasData = stats !== null && stats.totalCount >= 5;
+
+const fmt = hasData
+  ? new Intl.NumberFormat(locale === "es" ? "es-ES" : "en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    })
+  : null;
+---
+
+<aside
+  class="my-8 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-6"
+  aria-label={tr("model.stats.median_price")}
+>
+  {hasData && stats && fmt ? (
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div>
+        <p class="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+          {tr("model.stats.median_price")}
+        </p>
+        <p class="mt-1 text-3xl font-semibold">{fmt.format(stats.median)}</p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+          {tr("model.stats.price_range")}
+        </p>
+        <p class="mt-1 text-lg">{fmt.format(stats.p25)} – {fmt.format(stats.p75)}</p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+          {tr("model.stats.listing_count")}
+        </p>
+        <p class="mt-1 text-lg">
+          {stats.totalCount}{" "}
+          <span class="text-xs text-[var(--color-muted)]">{tr("model.stats.last_30_days")}</span>
+        </p>
+      </div>
+    </div>
+  ) : (
+    <p class="text-sm text-[var(--color-muted)]">{tr("model.stats.empty")}</p>
+  )}
+</aside>

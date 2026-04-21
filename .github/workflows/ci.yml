@@ -53,6 +53,10 @@ jobs:
       - name: i18n parity check
         run: npm run i18n:check
 
+      - name: Model MDX parity check
+        # Uses taxonomy-seed.json as fallback — no Supabase credentials needed in CI
+        run: npm run mdx:check
+
       - name: Unit tests
         run: npm run test
 

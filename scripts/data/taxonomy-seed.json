@@ -1,0 +1,7 @@
+[
+  { "make": "mazda", "model": "mx-5", "gen": "na" },
+  { "make": "datsun", "model": "240z", "gen": "s30" },
+  { "make": "seat", "model": "leon", "gen": "mk1" },
+  { "make": "volkswagen", "model": "golf", "gen": "mk4" },
+  { "make": "audi", "model": "a3", "gen": "8p" }
+]

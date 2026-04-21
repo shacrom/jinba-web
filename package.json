@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "npm run types:sync && npm run i18n:check && astro build",
+    "build": "npm run types:sync && npm run i18n:check && npm run mdx:check && astro build",
+    "mdx:check": "tsx scripts/check-model-mdx-parity.ts",
     "preview": "astro preview",
     "lint": "biome check .",
     "format": "biome format --write .",
@@ -53,6 +54,7 @@
     "@types/react-dom": "^19.0.0",
     "jsdom": "^25.0.1",
     "postcss": "^8.5.10",
+    "schema-dts": "^2.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

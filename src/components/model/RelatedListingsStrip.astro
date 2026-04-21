@@ -1,0 +1,108 @@
+---
+/**
+ * RelatedListingsStrip.astro — T25
+ * Build-time query for live listings with processed photos.
+ * REQ-STRIP-01 through REQ-STRIP-05.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import { supabase } from "@/lib/supabase";
+
+export interface Props {
+  generationId: number;
+  limit?: number;
+  locale: Locale;
+}
+
+const { generationId, limit = 3, locale } = Astro.props;
+const tr = t(locale);
+
+const supabaseBase = import.meta.env.PUBLIC_SUPABASE_URL as string;
+
+let listings: Array<{
+  id: number | null;
+  price: number | null;
+  currency: string | null;
+  year: number | null;
+  km: number | null;
+  location_text: string | null;
+  url: string | null;
+  last_seen_at: string | null;
+  listing_photos: Array<{ storage_path: string | null; privacy_processed_at: string | null }>;
+}> = [];
+
+if (supabase) {
+  try {
+    const { data } = await supabase
+      .from("listings_public")
+      .select(
+        "id, price, currency, year, km, location_text, url, last_seen_at, listing_photos!inner(storage_path, privacy_processed_at)"
+      )
+      .eq("generation_id", generationId)
+      .eq("status", "active")
+      .not("listing_photos.privacy_processed_at", "is", null)
+      .order("last_seen_at", { ascending: false })
+      .limit(limit);
+
+    listings = (data ?? []) as typeof listings;
+  } catch {
+    // CI with fake keys — renders nothing
+  }
+}
+---
+
+{listings.length > 0 && (
+  <section class="mt-10" aria-label={tr("model.related.heading")}>
+    <h2 class="text-2xl font-semibold">{tr("model.related.heading")}</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+      {listings.map((listing) => {
+        const photos = listing.listing_photos ?? [];
+        const photoPath = photos[0]?.storage_path;
+        const imgUrl = photoPath
+          ? `${supabaseBase}/storage/v1/object/public/listing-photos/${photoPath}`
+          : "/placeholders/listing.webp";
+        const currency = listing.currency ?? "EUR";
+        const fmtCurrency = new Intl.NumberFormat(locale === "es" ? "es-ES" : "en-US", {
+          style: "currency",
+          currency,
+          maximumFractionDigits: 0,
+        });
+        const fmtKm = listing.km != null
+          ? listing.km.toLocaleString(locale === "es" ? "es-ES" : "en-US")
+          : null;
+        const altText = `${tr("model.related.heading")} ${listing.year ?? ""}`;
+
+        return (
+          <a
+            href={listing.url ?? "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="group block overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] transition-shadow hover:shadow-[var(--shadow-card)] hover:ring-2 hover:ring-[var(--color-ring)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+            aria-label={`${tr("model.related.view_all")} — ${altText}`}
+          >
+            <img
+              src={imgUrl}
+              alt={altText}
+              class="aspect-[4/3] w-full object-cover"
+              loading="lazy"
+              width={400}
+              height={300}
+            />
+            <div class="p-3">
+              <p class="text-lg font-semibold">
+                {listing.price != null ? fmtCurrency.format(listing.price) : "—"}
+              </p>
+              <p class="text-xs text-[var(--color-muted)]">
+                {listing.year ?? "—"}
+                {fmtKm ? ` · ${fmtKm} km` : ""}
+              </p>
+              {listing.location_text && (
+                <p class="text-xs text-[var(--color-muted)]">{listing.location_text}</p>
+              )}
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  </section>
+)}

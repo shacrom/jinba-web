@@ -1,0 +1,72 @@
+---
+import type { Locale } from "@/i18n/config";
+/**
+ * ModelHero.astro — T18
+ * Hero section with LCP-optimized image, h1, year range, and chassis badge.
+ * REQ-HERO-01 through REQ-HERO-06.
+ */
+import type { HeroImage, LocalizedTaxon } from "@/lib/model-types";
+
+export interface Props {
+  make: LocalizedTaxon;
+  model: LocalizedTaxon;
+  gen: LocalizedTaxon;
+  chassisCode?: string | null;
+  years: { start: number; end?: number };
+  heroImage?: HeroImage | null;
+  locale: Locale;
+}
+
+const { make, model, gen, chassisCode, years, heroImage } = Astro.props;
+const placeholder = "/placeholders/model-hero.webp";
+const yearsStr = `${years.start}${years.end ? `–${years.end}` : ""}`;
+---
+
+<section
+  class="relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-card)] shadow-[var(--shadow-card)]"
+  aria-label={`${make.name} ${model.name} ${gen.name}`}
+>
+  <div class="aspect-video overflow-hidden">
+    {heroImage ? (
+      <img
+        src={heroImage.url}
+        alt={heroImage.alt}
+        width={heroImage.width}
+        height={heroImage.height}
+        loading="eager"
+        fetchpriority="high"
+        class="h-full w-full object-cover"
+        decoding="async"
+      />
+    ) : (
+      <img
+        src={placeholder}
+        alt={`${make.name} ${model.name} ${gen.name}`}
+        width={1200}
+        height={675}
+        loading="eager"
+        fetchpriority="high"
+        class="h-full w-full object-cover opacity-60"
+        decoding="async"
+      />
+    )}
+  </div>
+
+  {/* Single semantic h1 (W-01 fix): overlaid on the hero, no sr-only duplicate. */}
+  <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
+    <p class="text-xs font-semibold uppercase tracking-widest text-[var(--color-accent)]">
+      {make.name}
+    </p>
+    <h1 class="mt-1 font-serif text-3xl font-semibold text-white sm:text-4xl md:text-5xl">
+      {model.name} <span class="text-[var(--color-accent)]">{gen.name}</span>
+    </h1>
+    <p class="mt-2 flex flex-wrap items-center gap-3 text-sm text-white/80">
+      <span>{yearsStr}</span>
+      {chassisCode && (
+        <span class="rounded border border-white/30 px-2 py-0.5 text-xs font-mono tracking-wide">
+          {chassisCode}
+        </span>
+      )}
+    </p>
+  </div>
+</section>

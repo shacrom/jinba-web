@@ -1,0 +1,50 @@
+---
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+/**
+ * ModificationsList.astro — T23
+ * Cards grid for modification entries with legality badges.
+ * REQ-EDIT-05.
+ */
+import type { ModEntry } from "@/lib/model-types";
+
+export interface Props {
+  mods: ModEntry[];
+  locale: Locale;
+}
+
+const { mods, locale } = Astro.props;
+const tr = t(locale);
+
+type LegalityKey = "legal" | "homologable" | "illegal";
+const legalityClasses: Record<LegalityKey, string> = {
+  legal: "bg-emerald-900 text-emerald-300",
+  homologable: "bg-[var(--color-accent)] text-[var(--color-accent-fg)]",
+  illegal: "bg-[var(--color-accent-hot)] text-white",
+};
+---
+
+{mods.length > 0 && (
+  <div class="mt-6 grid gap-4 sm:grid-cols-2">
+    {mods.map((mod) => (
+      <article class="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-4">
+        <div class="mb-2 flex flex-wrap items-center gap-2">
+          <span class="text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
+            {mod.category}
+          </span>
+          <span
+            class={`ml-auto inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${legalityClasses[mod.legality]}`}
+          >
+            {tr(`model.mods.legality.${mod.legality}` as "model.mods.legality.legal")}
+          </span>
+        </div>
+        <p class="text-sm leading-relaxed text-[var(--color-fg)]">{mod.description}</p>
+        {(mod.cost_eur_min > 0 || mod.cost_eur_max > 0) && (
+          <p class="mt-2 font-mono text-xs text-[var(--color-muted)]">
+            {mod.cost_eur_min}–{mod.cost_eur_max} €
+          </p>
+        )}
+      </article>
+    ))}
+  </div>
+)}

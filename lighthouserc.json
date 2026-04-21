@@ -2,7 +2,12 @@
   "ci": {
     "collect": {
       "staticDistDir": "./dist",
-      "url": ["/es/index.html", "/en/index.html"]
+      "url": [
+        "/es/index.html",
+        "/en/index.html",
+        "/es/mazda/mx-5/na/index.html",
+        "/en/mazda/mx-5/na/index.html"
+      ]
     },
     "assert": {
       "assertions": {

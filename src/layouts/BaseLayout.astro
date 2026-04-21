@@ -42,6 +42,8 @@ const plausibleDomain = import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN as string | unde
     <meta name="twitter:title" content={meta.title} />
     <meta name="twitter:description" content={meta.description} />
     {meta.image && <meta name="twitter:image" content={meta.image} />}
+    <!-- Slot for page-level <head> additions (e.g. JSON-LD, preload links) -->
+    <slot name="head" />
     <!-- Plausible Analytics (cookieless, injected only when domain is set) -->
     {plausibleDomain && (
       <script
