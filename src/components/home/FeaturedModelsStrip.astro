@@ -1,0 +1,70 @@
+---
+/**
+ * FeaturedModelsStrip.astro — T09
+ * Renders up to 5 FeaturedModelCards in a responsive grid.
+ * REQ-MODELS-01.
+ */
+import FeaturedModelCard from "@/components/home/FeaturedModelCard.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+
+export interface HomeGenRow {
+  id: number;
+  slug: string;
+  name_es: string;
+  name_en: string;
+  year_start: number;
+  year_end: number | null;
+  chassis_code: string | null;
+  models: {
+    slug: string;
+    name_es: string;
+    name_en: string;
+    makes: {
+      slug: string;
+      name_es: string;
+      name_en: string;
+    };
+  };
+}
+
+export interface Props {
+  gens: HomeGenRow[];
+  locale: Locale;
+}
+
+const { gens, locale } = Astro.props;
+const tr = t(locale);
+
+function name(x: { name_es: string; name_en: string }): string {
+  return locale === "es" ? x.name_es : x.name_en;
+}
+---
+
+<section
+  id="featured-models"
+  class="mx-auto max-w-6xl px-6 py-12"
+  aria-labelledby="featured-models-heading"
+>
+  <h2 id="featured-models-heading" class="text-2xl font-semibold">
+    {tr("home.featuredModels.heading")}
+  </h2>
+  <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    {
+      gens.map((g) => (
+        <FeaturedModelCard
+          makeSlug={g.models.makes.slug}
+          modelSlug={g.models.slug}
+          genSlug={g.slug}
+          makeName={name(g.models.makes)}
+          modelName={name(g.models)}
+          genName={name(g)}
+          yearStart={g.year_start}
+          yearEnd={g.year_end}
+          chassisCode={g.chassis_code}
+          locale={locale}
+        />
+      ))
+    }
+  </div>
+</section>

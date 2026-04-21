@@ -1,0 +1,43 @@
+---
+/**
+ * FeaturedGuidesStrip.astro — T11
+ * Renders up to 3 guide cards, or a "coming soon" line when the collection
+ * has no entries for the current locale.
+ * REQ-GUIDES-01/02/03.
+ */
+import type { CollectionEntry } from "astro:content";
+import FeaturedGuideCard from "@/components/home/FeaturedGuideCard.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+
+export interface Props {
+  entries: CollectionEntry<"guides">[];
+  locale: Locale;
+}
+
+const { entries, locale } = Astro.props;
+const tr = t(locale);
+---
+
+<section
+  id="featured-guides"
+  class="mx-auto max-w-6xl px-6 py-12"
+  aria-labelledby="featured-guides-heading"
+>
+  <h2 id="featured-guides-heading" class="text-2xl font-semibold">
+    {tr("home.featuredGuides.heading")}
+  </h2>
+  {
+    entries.length === 0 ? (
+      <p class="mt-4 text-sm text-[var(--color-muted)]">
+        {tr("home.featuredGuides.noneYet")}
+      </p>
+    ) : (
+      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {entries.map((e) => (
+          <FeaturedGuideCard entry={e} locale={locale} />
+        ))}
+      </div>
+    )
+  }
+</section>

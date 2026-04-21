@@ -1,10 +1,20 @@
 /**
- * jsonld.ts — JSON-LD helpers for model pages and listings.
+ * jsonld.ts — JSON-LD helpers for model pages, listings, and home.
  * T16 (M2): buildCarJsonLd — Car + conditional AggregateOffer.
  * T01 (M3): buildItemListJsonLd — ItemList for list pages.
  *           buildOfferJsonLd   — Offer for detail page.
+ * T01 (M1): buildOrganizationJsonLd + buildWebsiteJsonLd — Home @graph.
  */
-import type { Car, ItemList, ListItem, Offer, WithContext } from "schema-dts";
+import type { Locale } from "@/i18n/config";
+import type {
+  Car,
+  ItemList,
+  ListItem,
+  Offer,
+  Organization,
+  WebSite,
+  WithContext,
+} from "schema-dts";
 
 export interface CarJsonLdInput {
   makeName: string;
@@ -126,4 +136,52 @@ export function buildOfferJsonLd(input: OfferJsonLdInput): WithContext<Offer> | 
     availability: input.availability ?? "https://schema.org/InStock",
   };
   return obj as unknown as WithContext<Offer>;
+}
+
+// ── M1 helpers ──────────────────────────────────────────────────────────────
+
+/**
+ * Builds a Schema.org Organization JSON-LD block for the site publisher.
+ * Stamps a deterministic `@id` so WebSite can reference it by reference.
+ * REQ-JSONLD-01/02, REQ-SEO-04.
+ */
+export function buildOrganizationJsonLd(site: string): WithContext<Organization> {
+  const obj: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${site}#organization`,
+    name: "Jinba",
+    url: site,
+    logo: `${site}/favicon.svg`,
+    sameAs: [],
+  };
+  return obj as unknown as WithContext<Organization>;
+}
+
+/**
+ * Builds a Schema.org WebSite JSON-LD block with a SearchAction pointing at
+ * `/{locale}/listings/?q={search_term_string}` (M4 wires Meilisearch; in F1
+ * the URL is reserved and validated by Zod in listings-query.ts).
+ * REQ-JSONLD-01/02, REQ-SEO-03.
+ */
+export function buildWebsiteJsonLd(site: string, locale: Locale): WithContext<WebSite> {
+  const target = `${site}/${locale}/listings/?q={search_term_string}`;
+  const obj: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${site}#website`,
+    name: "Jinba",
+    url: site,
+    inLanguage: locale === "es" ? "es-ES" : "en-US",
+    publisher: { "@id": `${site}#organization` },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: target,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+  return obj as unknown as WithContext<WebSite>;
 }

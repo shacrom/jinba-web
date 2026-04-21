@@ -55,6 +55,20 @@ export const DictSchema = z.object({
   "seo.defaultDescription": z.string(),
   "section.comingSoon": z.string(),
 
+  // ── home page (M1 — 12 new keys) ──
+  "home.cta.exploreModels": z.string(),
+  "home.cta.viewListings": z.string(),
+  "home.hero.imageAlt": z.string(),
+  "home.featuredModels.heading": z.string(),
+  "home.featuredGuides.heading": z.string(),
+  "home.featuredGuides.noneYet": z.string(),
+  "home.latestListings.heading": z.string(),
+  "home.latestListings.viewAll": z.string(),
+  "home.manifesto.heading": z.string(),
+  "home.manifesto.body": z.string(),
+  "home.signup.heading": z.string(),
+  "home.signup.body": z.string(),
+
   // ── listings pages (M3 — 30+ new keys) ──
   "listings.pageTitle": z.string(),
   "listings.pageDescription": z.string(),
@@ -160,6 +174,22 @@ export const es = DictSchema.parse({
   "seo.defaultDescription":
     "Datos, precios en vivo, guía de compra, fallos típicos y modificaciones.",
   "section.comingSoon": "Contenido próximamente.",
+
+  // ── home page (M1) ──
+  "home.cta.exploreModels": "Explorar modelos",
+  "home.cta.viewListings": "Ver anuncios",
+  "home.hero.imageAlt": "Coches clásicos con alma — catálogo Jinba",
+  "home.featuredModels.heading": "Modelos destacados",
+  "home.featuredGuides.heading": "Guías editoriales",
+  "home.featuredGuides.noneYet": "Próximamente más guías editoriales.",
+  "home.latestListings.heading": "Últimos anuncios",
+  "home.latestListings.viewAll": "Ver todos los anuncios",
+  "home.manifesto.heading": "Por qué Jinba",
+  "home.manifesto.body":
+    "Jinba recoge los coches que nos apasionan y los cuenta como se merecen: fichas editoriales, precios reales y fotos sin datos privados.\n\nScrapeamos con respeto y publicamos con criterio. Lo que ves aquí son coches con alma, datos en vivo y talleres de confianza.",
+  "home.signup.heading": "Únete a la lista",
+  "home.signup.body":
+    "Te avisamos cuando abramos nuevas secciones y cuando aparezcan los coches que más nos gustan.",
 
   // ── listings pages (M3) ──
   "listings.pageTitle": "Anuncios de coches de segunda mano | Jinba",

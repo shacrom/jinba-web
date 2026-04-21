@@ -1,0 +1,176 @@
+---
+/**
+ * src/pages/[lang]/index.astro — T14
+ * Real Home: hero, featured models (5), latest listings (0-3, tolerant of empty),
+ * featured guides (0-3), manifesto, signup. JSON-LD @graph with WebSite + Organization.
+ * Replaces F0 legacy /es/index.astro + /en/index.astro (deleted in T15/T16).
+ * REQ-ROUTE-01, REQ-HERO-*, REQ-MODELS-*, REQ-GUIDES-*, REQ-LISTINGS-*,
+ * REQ-MANIFESTO-*, REQ-SIGNUP-*, REQ-SEO-*, REQ-LAYOUT-*.
+ */
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import FeaturedGuidesStrip from "@/components/home/FeaturedGuidesStrip.astro";
+import FeaturedModelsStrip, { type HomeGenRow } from "@/components/home/FeaturedModelsStrip.astro";
+import HomeFooter from "@/components/home/HomeFooter.astro";
+import HomeHero from "@/components/home/HomeHero.astro";
+import HomeNav from "@/components/home/HomeNav.astro";
+import LatestListingsStrip from "@/components/home/LatestListingsStrip.astro";
+import Manifesto from "@/components/home/Manifesto.astro";
+import EmailSignupForm from "@/components/islands/EmailSignupForm.tsx";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/lib/jsonld";
+import { buildListingsQuery, fetchPhotosForListings } from "@/lib/listings-query";
+import { type ValidatedListingRow, validateListingRows } from "@/lib/listings-schema";
+import { supabase } from "@/lib/supabase";
+
+interface SeedEntry {
+  make: string;
+  model: string;
+  gen: string;
+}
+
+type Photo = {
+  storage_path: string | null;
+  width: number | null;
+  height: number | null;
+  privacy_processed_at: string | null;
+};
+
+export async function getStaticPaths() {
+  return [
+    { params: { lang: "es" }, props: { lang: "es" as Locale } },
+    { params: { lang: "en" }, props: { lang: "en" as Locale } },
+  ];
+}
+
+const { lang } = Astro.props as { lang: Locale };
+const tr = t(lang);
+const site = (import.meta.env.PUBLIC_SITE_URL as string | undefined) ?? "https://jinba.example.com";
+const path = `/${lang}/`;
+
+// ── Featured gens (DB-first, seed fallback — REQ-MODELS-02) ─────────────────
+let featuredGens: HomeGenRow[] = [];
+if (supabase) {
+  try {
+    const { data } = await supabase
+      .from("generations")
+      .select(
+        "id, slug, name_es, name_en, year_start, year_end, chassis_code, models!inner ( slug, name_es, name_en, makes!inner ( slug, name_es, name_en ) )"
+      )
+      .limit(5);
+    if (data && data.length > 0) {
+      featuredGens = data as unknown as HomeGenRow[];
+    }
+  } catch {
+    // Supabase unreachable — fall through to seed
+  }
+}
+if (featuredGens.length === 0) {
+  const { readFileSync } = await import("node:fs");
+  const { resolve } = await import("node:path");
+  try {
+    const seedPath = resolve("scripts/data/taxonomy-seed.json");
+    const seed = JSON.parse(readFileSync(seedPath, "utf8")) as SeedEntry[];
+    let idCounter = 1;
+    featuredGens = seed.map((s) => ({
+      id: idCounter++,
+      slug: s.gen,
+      name_es: s.gen.toUpperCase(),
+      name_en: s.gen.toUpperCase(),
+      year_start: 1980,
+      year_end: null,
+      chassis_code: null,
+      models: {
+        slug: s.model,
+        name_es: s.model,
+        name_en: s.model,
+        makes: {
+          slug: s.make,
+          name_es: s.make.charAt(0).toUpperCase() + s.make.slice(1),
+          name_en: s.make.charAt(0).toUpperCase() + s.make.slice(1),
+        },
+      },
+    }));
+  } catch {
+    featuredGens = [];
+  }
+}
+
+// ── Latest listings (tolerant of empty — REQ-LISTINGS-03) ───────────────────
+let latestListings: ValidatedListingRow[] = [];
+let latestPhotos = new Map<number, Photo | null>();
+if (supabase) {
+  try {
+    const q = buildListingsQuery(supabase, {
+      sort: "last_seen_at_desc",
+      status: "active",
+    });
+    const { data } = await q;
+    latestListings = validateListingRows(data ?? []).slice(0, 3);
+    const ids = latestListings.map((l) => l.id).filter((id): id is number => id != null);
+    latestPhotos = await fetchPhotosForListings(supabase, ids);
+  } catch {
+    latestListings = [];
+  }
+}
+
+// ── Featured guides ─────────────────────────────────────────────────────────
+const allGuides = await getCollection("guides", (e) => e.data.locale === lang);
+const featuredGuides: CollectionEntry<"guides">[] = allGuides
+  .sort((a, b) => new Date(b.data.publishedAt).getTime() - new Date(a.data.publishedAt).getTime())
+  .slice(0, 3);
+
+// ── SEO + JSON-LD @graph ────────────────────────────────────────────────────
+const title = tr("home.title");
+const description = tr("home.subtitle");
+const ogImage = new URL("/placeholders/home-hero.webp", site).toString();
+const websiteJsonLd = buildWebsiteJsonLd(site, lang);
+const orgJsonLd = buildOrganizationJsonLd(site);
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  locale={lang}
+  path={path}
+  image={ogImage}
+  jsonLd={[websiteJsonLd, orgJsonLd]}
+>
+  <link slot="head" rel="preload" as="image" href="/placeholders/home-hero.webp" />
+
+  <div class="min-h-screen">
+    <HomeNav locale={lang} />
+
+    <main>
+      <HomeHero locale={lang} />
+
+      <FeaturedModelsStrip gens={featuredGens} locale={lang} />
+
+      <LatestListingsStrip listings={latestListings} photos={latestPhotos} locale={lang} />
+
+      <FeaturedGuidesStrip entries={featuredGuides} locale={lang} />
+
+      <Manifesto locale={lang} />
+
+      <section id="signup" class="mx-auto max-w-3xl px-6 py-16" aria-labelledby="signup-heading">
+        <h2 id="signup-heading" class="text-2xl font-semibold">
+          {tr("home.signup.heading")}
+        </h2>
+        <p class="mt-2 text-[var(--color-muted)]">{tr("home.signup.body")}</p>
+        <div class="mt-6">
+          <EmailSignupForm
+            client:visible
+            placeholder={tr("home.cta.placeholder")}
+            submit={tr("home.cta.signup")}
+            errorMessage={tr("form.error.invalidEmail")}
+            successMessage={tr("form.success.signup")}
+          />
+        </div>
+      </section>
+    </main>
+
+    <HomeFooter locale={lang} />
+  </div>
+</BaseLayout>

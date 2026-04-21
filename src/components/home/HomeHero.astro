@@ -1,0 +1,61 @@
+---
+/**
+ * HomeHero.astro — T05
+ * Editorial hero with H1, subtitle, and two CTAs.
+ * REQ-HERO-01/02/03/04/05.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+
+export interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const tr = t(locale);
+---
+
+<section
+  class="relative overflow-hidden border-b border-[var(--color-border)]"
+  aria-labelledby="home-hero-heading"
+>
+  <img
+    src="/placeholders/home-hero.webp"
+    alt={tr("home.hero.imageAlt")}
+    class="absolute inset-0 h-full w-full object-cover opacity-40"
+    loading="eager"
+    fetchpriority="high"
+    width="1600"
+    height="900"
+  />
+  <div
+    class="absolute inset-0 bg-gradient-to-b from-[var(--color-bg)]/20 via-[var(--color-bg)]/60 to-[var(--color-bg)]"
+    aria-hidden="true"
+  >
+  </div>
+  <div class="relative mx-auto max-w-5xl px-6 py-24 sm:py-32">
+    <h1
+      id="home-hero-heading"
+      class="max-w-3xl text-4xl font-semibold tracking-tight sm:text-6xl"
+    >
+      {tr("home.title")}
+    </h1>
+    <p class="mt-4 max-w-xl text-lg text-[var(--color-muted)]">
+      {tr("home.subtitle")}
+    </p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a
+        href="#featured-models"
+        class="inline-flex items-center rounded-[var(--radius)] bg-[var(--color-accent)] px-5 py-2.5 text-sm font-medium text-[var(--color-accent-fg)] transition-colors hover:bg-[var(--color-accent-hot)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+      >
+        {tr("home.cta.exploreModels")}
+      </a>
+      <a
+        href={`/${locale}/listings/`}
+        class="inline-flex items-center rounded-[var(--radius)] border border-[var(--color-border)] px-5 py-2.5 text-sm font-medium text-[var(--color-fg)] transition-colors hover:bg-[var(--color-card)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+      >
+        {tr("home.cta.viewListings")}
+      </a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,30 @@
+---
+/**
+ * Manifesto.astro — T13
+ * Editorial copy block — h2 + 2-3 paragraphs from i18n.
+ * REQ-MANIFESTO-01/02.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+
+export interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const tr = t(locale);
+const paragraphs = tr("home.manifesto.body").split("\n\n");
+---
+
+<section
+  id="manifesto"
+  class="mx-auto max-w-3xl px-6 py-16"
+  aria-labelledby="manifesto-heading"
+>
+  <h2 id="manifesto-heading" class="text-2xl font-semibold">
+    {tr("home.manifesto.heading")}
+  </h2>
+  <div class="mt-4 space-y-4 text-[var(--color-muted)]">
+    {paragraphs.map((p) => <p>{p}</p>)}
+  </div>
+</section>

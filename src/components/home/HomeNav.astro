@@ -1,0 +1,57 @@
+---
+/**
+ * HomeNav.astro — T06
+ * Sticky header for Home with site brand, in-page anchors, and ThemeToggle island.
+ * REQ-LAYOUT-02.
+ */
+import ThemeToggle from "@/components/islands/ThemeToggle.tsx";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+
+export interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const tr = t(locale);
+---
+
+<header
+  class="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-bg)]/85 backdrop-blur"
+>
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+    <a
+      href={`/${locale}/`}
+      class="text-lg font-semibold tracking-tight text-[var(--color-fg)]"
+      aria-label="Jinba"
+    >
+      Jinba
+    </a>
+    <nav aria-label={tr("nav.home")} class="flex items-center gap-4 text-sm">
+      <a
+        href="#featured-models"
+        class="text-[var(--color-muted)] transition-colors hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+      >
+        {tr("nav.models")}
+      </a>
+      <a
+        href="#featured-guides"
+        class="text-[var(--color-muted)] transition-colors hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+      >
+        {tr("nav.guides")}
+      </a>
+      <a
+        href={`/${locale}/listings/`}
+        class="text-[var(--color-muted)] transition-colors hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+      >
+        {tr("listings.breadcrumb.listings")}
+      </a>
+      <ThemeToggle
+        client:idle
+        label={tr("theme.toggle")}
+        labelLight={tr("theme.labelLight")}
+        labelDark={tr("theme.labelDark")}
+      />
+    </nav>
+  </div>
+</header>

@@ -1,0 +1,60 @@
+---
+/**
+ * LatestListingsStrip.astro — T12
+ * Wrapper around ListingsGrid showing 0-3 latest listings.
+ * Returns nothing (no DOM) when there are 0 listings — REQ-LISTINGS-03.
+ * REQ-LISTINGS-01/02/04/05.
+ */
+import ListingsGrid from "@/components/listings/ListingsGrid.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import type { ValidatedListingRow } from "@/lib/listings-schema";
+
+type Photo = {
+  storage_path: string | null;
+  width: number | null;
+  height: number | null;
+  privacy_processed_at: string | null;
+};
+
+export interface Props {
+  listings: ValidatedListingRow[];
+  photos: Map<number, Photo | null>;
+  locale: Locale;
+}
+
+const { listings, photos, locale } = Astro.props;
+const tr = t(locale);
+---
+
+{
+  listings.length > 0 && (
+    <section
+      id="latest-listings"
+      class="mx-auto max-w-6xl px-6 py-12"
+      aria-labelledby="latest-listings-heading"
+    >
+      <h2 id="latest-listings-heading" class="text-2xl font-semibold">
+        {tr("home.latestListings.heading")}
+      </h2>
+      <div class="mt-6">
+        <ListingsGrid
+          listings={listings}
+          photos={photos}
+          sourceNames={new Map()}
+          makeName=""
+          modelName=""
+          locale={locale}
+        />
+      </div>
+      <div class="mt-6 text-right">
+        <a
+          href={`/${locale}/listings/`}
+          class="text-sm font-medium text-[var(--color-accent)] hover:underline focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+        >
+          {tr("home.latestListings.viewAll")} →
+        </a>
+      </div>
+    </section>
+  )
+}

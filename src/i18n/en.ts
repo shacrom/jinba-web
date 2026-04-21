@@ -52,6 +52,22 @@ export const en: Dict = DictSchema.parse({
   "seo.defaultDescription": "Data, live prices, buying guide, common faults and modifications.",
   "section.comingSoon": "Content coming soon.",
 
+  // ── home page (M1) ──
+  "home.cta.exploreModels": "Explore models",
+  "home.cta.viewListings": "View listings",
+  "home.hero.imageAlt": "Soulful classic cars — Jinba catalog",
+  "home.featuredModels.heading": "Featured models",
+  "home.featuredGuides.heading": "Editorial guides",
+  "home.featuredGuides.noneYet": "More editorial guides coming soon.",
+  "home.latestListings.heading": "Latest listings",
+  "home.latestListings.viewAll": "View all listings",
+  "home.manifesto.heading": "Why Jinba",
+  "home.manifesto.body":
+    "Jinba gathers the cars we love and tells their story the way it deserves: editorial fact sheets, real prices, and photos with private data scrubbed.\n\nWe scrape with respect and publish with care. What you see here are soulful cars, live data, and trusted workshops.",
+  "home.signup.heading": "Join the list",
+  "home.signup.body":
+    "We'll let you know when new sections open and when the cars we love the most appear.",
+
   // ── listings pages (M3) ──
   "listings.pageTitle": "Used car listings | Jinba",
   "listings.pageDescription":

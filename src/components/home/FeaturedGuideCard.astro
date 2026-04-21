@@ -1,0 +1,45 @@
+---
+/**
+ * FeaturedGuideCard.astro — T10
+ * Anchor card for a single guide entry.
+ * REQ-GUIDES-04.
+ */
+import type { CollectionEntry } from "astro:content";
+import type { Locale } from "@/i18n/config";
+
+export interface Props {
+  entry: CollectionEntry<"guides">;
+  locale: Locale;
+}
+
+const { entry, locale } = Astro.props;
+
+// Astro 6 glob loader slugifies filename segments — strip the locale suffix
+// so the canonical "sample.es" entry routes to /{locale}/guides/sample/.
+const cleanId = entry.id.replace(/\.(es|en)$/, "");
+const href = `/${locale}/guides/${cleanId}/`;
+
+const dateFmt = new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-US", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
+---
+
+<a
+  href={href}
+  class="group block rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-5 transition-shadow hover:shadow-[var(--shadow-card)] hover:ring-2 hover:ring-[var(--color-ring)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+>
+  <p class="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+    {dateFmt.format(entry.data.publishedAt)}
+  </p>
+  <h3 class="mt-2 text-lg font-semibold text-[var(--color-fg)]">
+    {entry.data.title}
+  </h3>
+  <p class="mt-2 text-sm text-[var(--color-muted)]">{entry.data.description}</p>
+  {
+    entry.data.tags.length > 0 && (
+      <p class="mt-3 text-xs text-[var(--color-muted)]">{entry.data.tags.join(" · ")}</p>
+    )
+  }
+</a>
