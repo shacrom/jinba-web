@@ -1,0 +1,183 @@
+---
+/**
+ * src/pages/[lang]/services/[slug].astro — M7 T13
+ * Static service detail. One page per (slug, locale) — 6 seeds + 1 sample × 2 locales.
+ * Uses `render(entry)` for MDX body; emits LocalBusiness JSON-LD (type-aware).
+ * REQ-ROUTE-02, REQ-ROUTE-03, REQ-DETAIL-01..05, REQ-SEO-01/02/03,
+ * REQ-JSONLD-01/02/03, REQ-A11Y-01/03/04.
+ */
+import { type CollectionEntry, getCollection, render } from "astro:content";
+import HomeFooter from "@/components/home/HomeFooter.astro";
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { buildLocalBusinessJsonLd } from "@/lib/jsonld";
+import { guideSlug } from "@/lib/reading-time";
+import { regionLabel } from "@/lib/services-regions";
+
+export async function getStaticPaths() {
+  const all = await getCollection("services");
+  return all.map((entry) => ({
+    params: {
+      lang: entry.data.locale,
+      slug: guideSlug(entry.id, entry.data.locale),
+    },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props as { entry: CollectionEntry<"services"> };
+const lang = entry.data.locale as Locale;
+const tr = t(lang);
+
+const slug = guideSlug(entry.id, entry.data.locale);
+const path = `/${lang}/services/${slug}/`;
+
+const { Content } = await render(entry);
+
+const site = (import.meta.env.PUBLIC_SITE_URL as string | undefined) ?? "https://jinba.example.com";
+const url = new URL(path, site).toString();
+
+const jsonLd = buildLocalBusinessJsonLd({
+  name: entry.data.name,
+  type: entry.data.type,
+  url,
+  locale: lang,
+  description: entry.data.description,
+  telephone: entry.data.phone,
+  website: entry.data.website,
+  city: entry.data.city,
+  country: entry.data.country,
+  geo: entry.data.geo,
+  siteOrgId: `${site}#organization`,
+});
+
+const typeLabel = tr(`services.type.${entry.data.type}` as never);
+const regLabel = regionLabel(entry.data.region, lang);
+const telHref = entry.data.phone ? `tel:${entry.data.phone.replace(/\s+/g, "")}` : null;
+---
+
+<BaseLayout
+  title={entry.data.name}
+  description={entry.data.description}
+  locale={lang}
+  path={path}
+  jsonLd={jsonLd}
+>
+  <a
+    href="#service-main"
+    class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-20 focus:rounded-[var(--radius-sm)] focus:border focus:border-[var(--color-border)] focus:bg-[var(--color-card)] focus:px-3 focus:py-2 focus:text-sm focus:text-[var(--color-fg)]"
+  >
+    {tr("guides.detail.skipToContent")}
+  </a>
+
+  <HomeNav locale={lang} />
+
+  <main id="service-main" class="mx-auto max-w-4xl px-4 pb-16">
+    <nav aria-label="breadcrumb" class="py-4 text-sm text-[var(--color-muted)]">
+      <ol class="flex flex-wrap items-center gap-1">
+        <li>
+          <a
+            href={`/${lang}/`}
+            class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+          >
+            {tr("nav.home")}
+          </a>
+        </li>
+        <li aria-hidden="true">›</li>
+        <li>
+          <a
+            href={`/${lang}/services/`}
+            class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+          >
+            {tr("nav.services")}
+          </a>
+        </li>
+        <li aria-hidden="true">›</li>
+        <li><span aria-current="page">{entry.data.name}</span></li>
+      </ol>
+    </nav>
+
+    <header class="mb-8">
+      <div class="mb-3 flex flex-wrap items-center gap-2 text-xs uppercase tracking-widest">
+        <span
+          class="rounded-full border border-[var(--color-accent)] px-2 py-0.5 text-[var(--color-accent)]"
+        >
+          {typeLabel}
+        </span>
+        <span class="text-[var(--color-muted)]">{regLabel}</span>
+        <span aria-hidden="true" class="text-[var(--color-muted)]">·</span>
+        <span class="text-[var(--color-muted)]">{entry.data.city}</span>
+      </div>
+      <h1 class="text-3xl font-bold">{entry.data.name}</h1>
+      <p class="mt-2 max-w-2xl text-[var(--color-muted)]">{entry.data.description}</p>
+    </header>
+
+    {
+      (telHref || entry.data.website) && (
+        <dl class="mb-8 grid gap-3 text-sm sm:grid-cols-2">
+          {telHref && (
+            <div>
+              <dt class="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+                {tr("services.detail.phone")}
+              </dt>
+              <dd>
+                <a
+                  href={telHref}
+                  class="text-[var(--color-accent)] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+                >
+                  {entry.data.phone}
+                </a>
+              </dd>
+            </div>
+          )}
+          {entry.data.website && (
+            <div>
+              <dt class="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+                {tr("services.detail.website")}
+              </dt>
+              <dd>
+                <a
+                  href={entry.data.website}
+                  target="_blank"
+                  rel="external noopener"
+                  class="text-[var(--color-accent)] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+                >
+                  {entry.data.website}
+                </a>
+              </dd>
+            </div>
+          )}
+        </dl>
+      )
+    }
+
+    {
+      entry.data.specialty_tags.length > 0 && (
+        <ul class="mb-8 flex flex-wrap gap-2 text-xs">
+          {entry.data.specialty_tags.map((tag) => (
+            <li class="rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-1 text-[var(--color-muted)]">
+              {tag}
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    <article class="prose prose-invert max-w-none">
+      <Content />
+    </article>
+
+    <p class="mt-10 text-sm">
+      <a
+        href={`/${lang}/services/`}
+        class="text-[var(--color-accent)] underline underline-offset-2 hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+      >
+        ← {tr("services.detail.backToIndex")}
+      </a>
+    </p>
+  </main>
+
+  <HomeFooter locale={lang} />
+</BaseLayout>

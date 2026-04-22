@@ -189,6 +189,23 @@ export const en: Dict = DictSchema.parse({
   "calc.cta.modelBody":
     "Does your car belong to this generation? Get a tailored estimate using your mileage and condition.",
   "calc.cta.modelCtaLabel": "Open calculator",
+
+  // ── services (M7) ──
+  "services.index.title": "Service directory | Jinba",
+  "services.index.description":
+    "Trusted workshops, homologation specialists, and parts suppliers for soulful cars. Filter by type and region to find your specialist.",
+  "services.index.heading": "Recommended services",
+  "services.index.empty": "No services match the selected filters.",
+  "services.filter.type.all": "All types",
+  "services.filter.region.all": "All regions",
+  "services.type.workshop": "Workshop",
+  "services.type.homologation": "Homologation",
+  "services.type.parts": "Parts",
+  "services.type.media": "Media",
+  "services.card.ariaLabel": "View details for {name}",
+  "services.detail.phone": "Phone",
+  "services.detail.website": "Website",
+  "services.detail.backToIndex": "Back to the directory",
 });
 
 const DICTS = { es, en } as const satisfies Record<Locale, Dict>;

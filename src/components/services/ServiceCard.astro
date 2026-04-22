@@ -1,0 +1,61 @@
+---
+/**
+ * ServiceCard.astro — M7 T10
+ * Index card for a single service. Exposes `data-service-type` and
+ * `data-service-region` on the wrapper so `ServicesFilter.tsx` can toggle
+ * visibility purely via DOM attributes. The anchor carries an aria-label
+ * built from `services.card.ariaLabel` (REQ-INDEX-03, REQ-A11Y-02).
+ */
+import type { CollectionEntry } from "astro:content";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import { guideSlug } from "@/lib/reading-time";
+import { regionLabel } from "@/lib/services-regions";
+
+export interface Props {
+  entry: CollectionEntry<"services">;
+  locale: Locale;
+}
+
+const { entry, locale } = Astro.props;
+const tr = t(locale);
+
+const slug = guideSlug(entry.id, entry.data.locale);
+const href = `/${locale}/services/${slug}/`;
+const typeLabel = tr(`services.type.${entry.data.type}` as never);
+const regLabel = regionLabel(entry.data.region, locale);
+const ariaLabel = tr("services.card.ariaLabel").replace("{name}", entry.data.name);
+---
+
+<div
+  data-service-card
+  data-service-type={entry.data.type}
+  data-service-region={entry.data.region}
+  class="h-full"
+>
+  <a
+    href={href}
+    aria-label={ariaLabel}
+    class="group flex h-full flex-col rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-5 transition-shadow hover:shadow-[var(--shadow-card)] hover:ring-2 hover:ring-[var(--color-ring)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+  >
+    <div class="mb-3 flex flex-wrap items-center gap-2 text-xs uppercase tracking-widest">
+      <span
+        class="rounded-full border border-[var(--color-accent)] px-2 py-0.5 text-[var(--color-accent)]"
+      >
+        {typeLabel}
+      </span>
+      <span class="text-[var(--color-muted)]">{regLabel}</span>
+      <span aria-hidden="true" class="text-[var(--color-muted)]">·</span>
+      <span class="text-[var(--color-muted)]">{entry.data.city}</span>
+    </div>
+    <h3 class="text-lg font-semibold text-[var(--color-fg)]">{entry.data.name}</h3>
+    <p class="mt-2 text-sm text-[var(--color-muted)]">{entry.data.description}</p>
+    {
+      entry.data.specialty_tags.length > 0 && (
+        <p class="mt-3 text-xs text-[var(--color-muted)]">
+          {entry.data.specialty_tags.join(" · ")}
+        </p>
+      )
+    }
+  </a>
+</div>

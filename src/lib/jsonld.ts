@@ -15,6 +15,7 @@ import type {
   ListItem,
   Offer,
   Organization,
+  Thing,
   WebSite,
   WithContext,
 } from "schema-dts";
@@ -244,6 +245,90 @@ export function buildArticleJsonLd(input: ArticleJsonLdInput): WithContext<Artic
   if (input.dateModified) obj.dateModified = input.dateModified;
   if (input.author) obj.author = { "@type": "Person", name: input.author };
   return obj as unknown as WithContext<Article>;
+}
+
+// ── M7 helpers ──────────────────────────────────────────────────────────────
+
+export interface LocalBusinessJsonLdInput {
+  /** Business name. */
+  name: string;
+  /** Discriminator — selects `@type` via TYPE_TO_SCHEMA. */
+  type: "workshop" | "homologation" | "parts" | "media";
+  /** Absolute page URL. */
+  url: string;
+  /** Active locale — maps to `inLanguage`. */
+  locale: Locale;
+  /** Short description used as `description`. */
+  description: string;
+  /** Optional E.164-ish phone (as-provided, no normalization). */
+  telephone?: string;
+  /** Optional external website URL — emitted as `sameAs: [website]`. */
+  website?: string;
+  /** Optional city — maps to `address.addressLocality`. */
+  city?: string;
+  /** Optional country — maps to `address.addressCountry`. */
+  country?: string;
+  /** Optional geo coordinates. */
+  geo?: { lat: number; lng: number };
+  /** `#organization` node `@id` — used as `publisher` for `media` type. */
+  siteOrgId: string;
+}
+
+/** Maps the service-type enum to the Schema.org `@type` emitted in JSON-LD. */
+const TYPE_TO_SCHEMA: Record<LocalBusinessJsonLdInput["type"], string> = {
+  workshop: "AutoRepair",
+  homologation: "AutomotiveBusiness",
+  parts: "Store",
+  media: "WebSite",
+};
+
+/**
+ * Builds a Schema.org LocalBusiness-family JSON-LD block for a service detail
+ * page. The `@type` is chosen per-service (AutoRepair for workshops, Store for
+ * parts, AutomotiveBusiness for homologation, WebSite for media).
+ *
+ * Optional fields are omitted when their inputs are undefined; the returned
+ * object is always a well-formed WithContext<Thing>.
+ * REQ-JSONLD-01/02/03.
+ */
+export function buildLocalBusinessJsonLd(input: LocalBusinessJsonLdInput): WithContext<Thing> {
+  const obj: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": TYPE_TO_SCHEMA[input.type],
+    name: input.name,
+    description: input.description,
+    url: input.url,
+    inLanguage: input.locale === "es" ? "es-ES" : "en-US",
+  };
+
+  if (input.type === "media") {
+    obj.publisher = { "@id": input.siteOrgId };
+  }
+
+  if (input.telephone) {
+    obj.telephone = input.telephone;
+  }
+
+  if (input.website) {
+    obj.sameAs = [input.website];
+  }
+
+  if (input.city || input.country) {
+    const addr: Record<string, unknown> = { "@type": "PostalAddress" };
+    if (input.city) addr.addressLocality = input.city;
+    if (input.country) addr.addressCountry = input.country;
+    obj.address = addr;
+  }
+
+  if (input.geo) {
+    obj.geo = {
+      "@type": "GeoCoordinates",
+      latitude: input.geo.lat,
+      longitude: input.geo.lng,
+    };
+  }
+
+  return obj as unknown as WithContext<Thing>;
 }
 
 // ── M4 helpers ──────────────────────────────────────────────────────────────

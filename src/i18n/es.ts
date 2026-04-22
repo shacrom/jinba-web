@@ -179,6 +179,22 @@ export const DictSchema = z.object({
   "calc.cta.model": z.string(),
   "calc.cta.modelBody": z.string(),
   "calc.cta.modelCtaLabel": z.string(),
+
+  // ── services (M7 — 14 new keys) ──
+  "services.index.title": z.string(),
+  "services.index.description": z.string(),
+  "services.index.heading": z.string(),
+  "services.index.empty": z.string(),
+  "services.filter.type.all": z.string(),
+  "services.filter.region.all": z.string(),
+  "services.type.workshop": z.string(),
+  "services.type.homologation": z.string(),
+  "services.type.parts": z.string(),
+  "services.type.media": z.string(),
+  "services.card.ariaLabel": z.string(),
+  "services.detail.phone": z.string(),
+  "services.detail.website": z.string(),
+  "services.detail.backToIndex": z.string(),
 });
 
 export type Dict = z.infer<typeof DictSchema>;
@@ -372,4 +388,21 @@ export const es = DictSchema.parse({
   "calc.cta.modelBody":
     "¿Tu coche es de esta generación? Obtén una estimación personalizada con tus kilómetros y estado.",
   "calc.cta.modelCtaLabel": "Abrir calculadora",
+
+  // ── services (M7) ──
+  "services.index.title": "Directorio de servicios | Jinba",
+  "services.index.description":
+    "Talleres, homologadores y tiendas de piezas recomendados para coches con alma. Filtra por tipo y región para encontrar tu especialista.",
+  "services.index.heading": "Servicios recomendados",
+  "services.index.empty": "No encontramos servicios que coincidan con los filtros seleccionados.",
+  "services.filter.type.all": "Todos los tipos",
+  "services.filter.region.all": "Todas las regiones",
+  "services.type.workshop": "Taller",
+  "services.type.homologation": "Homologación",
+  "services.type.parts": "Piezas",
+  "services.type.media": "Medio",
+  "services.card.ariaLabel": "Ver ficha de {name}",
+  "services.detail.phone": "Teléfono",
+  "services.detail.website": "Sitio web",
+  "services.detail.backToIndex": "Volver al directorio",
 });

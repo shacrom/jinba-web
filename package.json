@@ -8,8 +8,9 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "npm run types:sync && npm run i18n:check && npm run mdx:check && astro build",
+    "build": "npm run types:sync && npm run i18n:check && npm run mdx:check && npm run mdx:services:check && astro build",
     "mdx:check": "tsx scripts/check-model-mdx-parity.ts",
+    "mdx:services:check": "tsx scripts/check-services-mdx-parity.ts",
     "preview": "astro preview",
     "lint": "biome check .",
     "format": "biome format --write .",

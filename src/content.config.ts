@@ -4,6 +4,32 @@ import { glob } from "astro/loaders";
 const localeField = z.enum(["es", "en"]);
 const severityField = z.enum(["low", "med", "high"]);
 const legalityField = z.enum(["legal", "homologable", "illegal"]);
+// M7: services schema fields
+const serviceTypeField = z.enum(["workshop", "homologation", "parts", "media"]);
+const regionField = z.enum([
+  "andalucia",
+  "aragon",
+  "asturias",
+  "cantabria",
+  "castilla-leon",
+  "castilla-la-mancha",
+  "catalunya",
+  "extremadura",
+  "galicia",
+  "baleares",
+  "canarias",
+  "rioja",
+  "madrid",
+  "murcia",
+  "navarra",
+  "pais-vasco",
+  "valencia",
+  "ceuta",
+  "melilla",
+  "international",
+]);
+// E.164-ish: optional leading `+`, digits and spaces only, 6–20 chars.
+const phoneField = z.string().regex(/^\+?[0-9 ]{6,20}$/);
 
 const guides = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/guides" }),
@@ -50,16 +76,32 @@ const models = defineCollection({
   }),
 });
 
+// M7: services directory — extended schema with type/region + contact fields.
 const services = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/services" }),
   schema: z.object({
+    // legacy (kept — FE still reads `title`/`description` for meta)
     title: z.string(),
     description: z.string(),
     locale: localeField,
     city: z.string(),
     country: z.string(),
     specialties: z.array(z.string()).default([]),
+    publishedAt: z.coerce.date().optional(),
+    // M7 new required fields
+    name: z.string().min(1),
+    type: serviceTypeField,
+    region: regionField,
+    // M7 new optional fields
+    specialty_tags: z.array(z.string()).default([]),
+    phone: phoneField.optional(),
     website: z.string().url().optional(),
+    geo: z
+      .object({
+        lat: z.number(),
+        lng: z.number(),
+      })
+      .optional(),
   }),
 });
 

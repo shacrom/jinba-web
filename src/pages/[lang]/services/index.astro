@@ -1,0 +1,106 @@
+---
+/**
+ * src/pages/[lang]/services/index.astro — M7 T12
+ * Static services directory index. Emits 2 pages (es + en).
+ * Renders all 6 services server-side; a React island filters by type + region.
+ * REQ-ROUTE-01, REQ-INDEX-01..06, REQ-A11Y-01, REQ-A11Y-04, REQ-SEO-01/03.
+ */
+import { getCollection } from "astro:content";
+import HomeFooter from "@/components/home/HomeFooter.astro";
+import HomeNav from "@/components/home/HomeNav.astro";
+import ServicesFilter from "@/components/islands/ServicesFilter.tsx";
+import ServiceCard from "@/components/services/ServiceCard.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { type Region, TYPE_VALUES, regionLabel } from "@/lib/services-regions";
+
+export async function getStaticPaths() {
+  return [
+    { params: { lang: "es" }, props: { lang: "es" as Locale } },
+    { params: { lang: "en" }, props: { lang: "en" as Locale } },
+  ];
+}
+
+const { lang } = Astro.props as { lang: Locale };
+const tr = t(lang);
+
+const all = await getCollection("services", (e) => e.data.locale === lang);
+const entries = all.sort((a, b) => a.data.name.localeCompare(b.data.name));
+
+// Only expose regions actually present in the dataset.
+const presentRegions = Array.from(new Set(entries.map((e) => e.data.region))).sort();
+
+const typeOptions = TYPE_VALUES.map((v) => ({
+  value: v,
+  label: tr(`services.type.${v}` as never),
+}));
+const regionOptions = presentRegions.map((v) => ({
+  value: v,
+  label: regionLabel(v as Region, lang),
+}));
+
+const path = `/${lang}/services/`;
+const title = tr("services.index.title");
+const description = tr("services.index.description");
+---
+
+<BaseLayout title={title} description={description} locale={lang} path={path}>
+  <a
+    href="#services-main"
+    class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-20 focus:rounded-[var(--radius-sm)] focus:border focus:border-[var(--color-border)] focus:bg-[var(--color-card)] focus:px-3 focus:py-2 focus:text-sm focus:text-[var(--color-fg)]"
+  >
+    {tr("guides.detail.skipToContent")}
+  </a>
+
+  <HomeNav locale={lang} />
+
+  <main id="services-main" class="mx-auto max-w-6xl px-4 pb-16">
+    <nav aria-label="breadcrumb" class="py-4 text-sm text-[var(--color-muted)]">
+      <ol class="flex flex-wrap items-center gap-1">
+        <li>
+          <a
+            href={`/${lang}/`}
+            class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+          >
+            {tr("nav.home")}
+          </a>
+        </li>
+        <li aria-hidden="true">›</li>
+        <li><span aria-current="page">{tr("nav.services")}</span></li>
+      </ol>
+    </nav>
+
+    <h1 class="mb-2 text-3xl font-bold">{tr("services.index.heading")}</h1>
+    <p class="mb-6 max-w-2xl text-[var(--color-muted)]">{description}</p>
+
+    <ServicesFilter
+      client:idle
+      typeOptions={typeOptions}
+      regionOptions={regionOptions}
+      labels={{
+        typeAll: tr("services.filter.type.all"),
+        regionAll: tr("services.filter.region.all"),
+        filtersHeading: tr("listings.filter.heading"),
+      }}
+    />
+
+    {
+      entries.length === 0 ? (
+        <p class="mt-6 text-sm text-[var(--color-muted)]">{tr("services.index.empty")}</p>
+      ) : (
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {entries.map((entry) => (
+            <ServiceCard entry={entry} locale={lang} />
+          ))}
+        </div>
+      )
+    }
+
+    <p id="services-empty-state" class="mt-10 text-sm text-[var(--color-muted)]" hidden>
+      {tr("services.index.empty")}
+    </p>
+  </main>
+
+  <HomeFooter locale={lang} />
+</BaseLayout>

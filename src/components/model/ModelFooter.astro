@@ -2,9 +2,10 @@
 import type { Locale } from "@/i18n/config";
 import { t } from "@/i18n/en";
 /**
- * ModelFooter.astro — T26
- * Cross-links to sibling generations of the same model.
- * REQ-ROUTE-04.
+ * ModelFooter.astro — T26 (M2), extended in M7 T14 with a services cross-link.
+ * Cross-links to sibling generations of the same model, and (M7) to the
+ * services directory for recommended workshops/homologation/parts shops.
+ * REQ-ROUTE-04 (M2), REQ-LINKS-01 (M7).
  */
 import type { SiblingGen } from "@/lib/model-types";
 
@@ -17,23 +18,36 @@ const { siblings, locale } = Astro.props;
 const tr = t(locale);
 ---
 
-{siblings.length > 0 && (
-  <footer class="mt-16 border-t border-[var(--color-border)] pt-8">
-    <p class="mb-4 text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)]">
-      {tr("model.footer.other_gens")}
-    </p>
-    <ul class="flex flex-wrap gap-3">
-      {siblings.map((sibling) => (
-        <li>
-          <a
-            href={sibling.url}
-            class="inline-flex flex-col rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2 text-sm transition-colors hover:bg-[var(--color-border)] hover:text-[var(--color-accent)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
-          >
-            <span class="font-medium">{sibling.name}</span>
-            <span class="text-xs text-[var(--color-muted)]">{sibling.years}</span>
-          </a>
-        </li>
-      ))}
-    </ul>
-  </footer>
-)}
+<footer class="mt-16 border-t border-[var(--color-border)] pt-8">
+  {
+    siblings.length > 0 && (
+      <>
+        <p class="mb-4 text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)]">
+          {tr("model.footer.other_gens")}
+        </p>
+        <ul class="flex flex-wrap gap-3">
+          {siblings.map((sibling) => (
+            <li>
+              <a
+                href={sibling.url}
+                class="inline-flex flex-col rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2 text-sm transition-colors hover:bg-[var(--color-border)] hover:text-[var(--color-accent)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+              >
+                <span class="font-medium">{sibling.name}</span>
+                <span class="text-xs text-[var(--color-muted)]">{sibling.years}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+
+  <p class={siblings.length > 0 ? "mt-8 text-sm" : "text-sm"}>
+    <a
+      href={`/${locale}/services/`}
+      class="text-[var(--color-accent)] underline underline-offset-2 hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+    >
+      → {tr("nav.services")}
+    </a>
+  </p>
+</footer>
