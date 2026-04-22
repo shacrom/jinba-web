@@ -32,12 +32,13 @@ import {
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 // ── Token gate (REQ-ROUTE-01 + REQ-ROUTE-02) ─────────────────────────────────
-// Read ADMIN_PREVIEW_TOKEN via process.env so it resolves at REQUEST TIME
-// on Vercel instead of being inlined into the SSR bundle at build time.
-// This lets the operator rotate the token from the Vercel dashboard without
-// a rebuild and avoids shipping the secret inside a deployment artifact.
+// Read ADMIN_PREVIEW_TOKEN. In Astro SSR on Vercel, both `process.env.*` and
+// `import.meta.env.*` resolve at request time. `process.env` is the most
+// reliable path for Vercel Function env vars (confirmed in runtime docs).
 const token = Astro.url.searchParams.get("token");
-const expected = typeof process !== "undefined" ? process.env.ADMIN_PREVIEW_TOKEN : undefined;
+const expected =
+  (typeof process !== "undefined" ? process.env.ADMIN_PREVIEW_TOKEN : undefined) ??
+  import.meta.env.ADMIN_PREVIEW_TOKEN;
 
 if (!expected || !token || token !== expected) {
   return new Response(
