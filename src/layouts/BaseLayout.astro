@@ -12,9 +12,20 @@ export interface Props {
   serif?: boolean; // load Fraunces for editorial pages
   /** Optional JSON-LD — emitted as a single @graph script in <head> (W-03 fix). */
   jsonLd?: WithContext<Thing> | WithContext<Thing>[];
+  /** When true, emit <meta name="robots" content="noindex,nofollow"> (M8 admin). */
+  noindex?: boolean;
 }
 
-const { title, description, locale, path, image, serif = false, jsonLd } = Astro.props;
+const {
+  title,
+  description,
+  locale,
+  path,
+  image,
+  serif = false,
+  jsonLd,
+  noindex = false,
+} = Astro.props;
 const meta = getMetaTags({ title, description, locale, path, image, jsonLd });
 
 // Build @graph array from jsonLd prop
@@ -40,6 +51,7 @@ const plausibleDomain = import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN as string | unde
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{meta.title}</title>
     <meta name="description" content={meta.description} />
+    {noindex && <meta name="robots" content="noindex,nofollow" />}
     <link rel="canonical" href={meta.canonical} />
     {meta.alternates.map((a) => (
       <link rel="alternate" hreflang={a.hreflang} href={a.href} />

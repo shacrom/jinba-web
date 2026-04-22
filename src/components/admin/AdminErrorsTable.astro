@@ -1,0 +1,88 @@
+---
+import { type AdminDict, adminT } from "@/i18n/admin";
+import type { ErrorBucket, FormattedErrorRow } from "@/lib/admin-scraping-format";
+
+export interface Props {
+  rows: FormattedErrorRow[];
+}
+
+const { rows } = Astro.props;
+
+const bucketBadge: Record<ErrorBucket, string> = {
+  http: "border-[var(--color-accent-hot)] text-[var(--color-accent-hot)]",
+  parse: "border-[var(--color-accent)] text-[var(--color-accent)]",
+  privacy: "border-violet-500 text-violet-400",
+  other: "border-[var(--color-muted)] text-[var(--color-muted)]",
+};
+
+const bucketKey = (b: ErrorBucket): keyof AdminDict => `errors.bucket.${b}` as keyof AdminDict;
+---
+
+<section id="errors" aria-labelledby="errors-heading">
+  <h2 id="errors-heading" class="mb-3 text-xl font-semibold">
+    {adminT("errors.heading")}
+  </h2>
+  <div class="overflow-x-auto rounded-[var(--radius)] border border-[var(--color-border)]">
+    <table class="min-w-full text-sm">
+      <caption class="sr-only">{adminT("errors.caption")}</caption>
+      <thead class="bg-[var(--color-card)] text-xs uppercase text-[var(--color-muted)]">
+        <tr>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("errors.col.source")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("errors.col.type")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("errors.col.url")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("errors.col.message")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("errors.col.when")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.length === 0 && (
+            <tr>
+              <td
+                colspan="5"
+                class="px-3 py-4 text-center text-[var(--color-muted)]"
+              >
+                {adminT("errors.row.empty")}
+              </td>
+            </tr>
+          )
+        }
+        {
+          rows.map((r) => (
+            <tr class="border-t border-[var(--color-border)]">
+              <td class="px-3 py-2 font-mono text-xs">{r.sourceSlug}</td>
+              <td class="px-3 py-2">
+                <span
+                  class={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs ${bucketBadge[r.bucket]}`}
+                >
+                  <span aria-hidden="true">●</span>
+                  <span>{adminT(bucketKey(r.bucket))}</span>
+                </span>
+                <span class="ml-2 font-mono text-xs text-[var(--color-muted)]">
+                  {r.errorType}
+                </span>
+              </td>
+              <td class="px-3 py-2 max-w-[20rem] truncate">
+                {r.url ? (
+                  <a
+                    href={r.url}
+                    title={r.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    class="underline"
+                  >
+                    {r.urlDisplay}
+                  </a>
+                ) : (
+                  <span class="text-[var(--color-muted)]">—</span>
+                )}
+              </td>
+              <td class="px-3 py-2">{r.message}</td>
+              <td class="px-3 py-2 whitespace-nowrap">{r.occurredDisplay}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

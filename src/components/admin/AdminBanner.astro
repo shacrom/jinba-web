@@ -1,0 +1,20 @@
+---
+import { adminT } from "@/i18n/admin";
+
+export interface Props {
+  show: boolean;
+}
+
+const { show } = Astro.props;
+---
+
+{
+  show && (
+    <div
+      role="alert"
+      class="mb-6 rounded-[var(--radius)] border border-[var(--color-accent-hot)] bg-[var(--color-card)] px-4 py-3 text-sm text-[var(--color-fg)]"
+    >
+      {adminT("banner.degraded")}
+    </div>
+  )
+}

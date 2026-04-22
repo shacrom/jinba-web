@@ -1,0 +1,80 @@
+---
+import { adminT } from "@/i18n/admin";
+import type { SourceHealth } from "@/lib/admin-scraping-format";
+
+export interface Props {
+  rows: SourceHealth[];
+}
+
+const { rows } = Astro.props;
+---
+
+<section id="sources" aria-labelledby="sources-heading">
+  <h2 id="sources-heading" class="mb-3 text-xl font-semibold">
+    {adminT("sources.heading")}
+  </h2>
+  <div class="overflow-x-auto rounded-[var(--radius)] border border-[var(--color-border)]">
+    <table class="min-w-full text-sm">
+      <caption class="sr-only">{adminT("sources.caption")}</caption>
+      <thead class="bg-[var(--color-card)] text-xs uppercase text-[var(--color-muted)]">
+        <tr>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("sources.col.slug")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("sources.col.display")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("sources.col.enabled")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("sources.col.lastRun")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("sources.col.successRate")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("sources.col.actions")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.length === 0 && (
+            <tr>
+              <td
+                colspan="6"
+                class="px-3 py-4 text-center text-[var(--color-muted)]"
+              >
+                {adminT("runs.row.empty")}
+              </td>
+            </tr>
+          )
+        }
+        {
+          rows.map((h) => (
+            <tr class="border-t border-[var(--color-border)]">
+              <td class="px-3 py-2 font-mono text-xs">{h.source.slug}</td>
+              <td class="px-3 py-2">{h.source.display_name}</td>
+              <td class="px-3 py-2">
+                <span
+                  class={`inline-flex items-center rounded border px-2 py-0.5 text-xs ${
+                    h.source.enabled
+                      ? "border-[var(--color-accent)] text-[var(--color-accent)]"
+                      : "border-[var(--color-muted)] text-[var(--color-muted)]"
+                  }`}
+                >
+                  {h.source.enabled
+                    ? adminT("sources.enabled.yes")
+                    : adminT("sources.enabled.no")}
+                </span>
+              </td>
+              <td class="px-3 py-2">{h.lastRunDisplay}</td>
+              <td class="px-3 py-2">{h.successRate}</td>
+              <td class="px-3 py-2">
+                <button
+                  type="button"
+                  disabled
+                  title={adminT("sources.btn.tooltip")}
+                  class="cursor-not-allowed rounded border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-1 text-xs text-[var(--color-muted)]"
+                >
+                  {h.source.enabled
+                    ? adminT("sources.btn.disable")
+                    : adminT("sources.btn.enable")}
+                </button>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

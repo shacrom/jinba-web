@@ -1,0 +1,173 @@
+---
+/**
+ * src/pages/admin/scraping/index.astro — M8
+ *
+ * Internal scraping telemetry dashboard. Unauthenticated but hidden:
+ *   - noindex,nofollow meta
+ *   - excluded from sitemap (see astro.config.mjs filter)
+ *   - disallowed in robots.txt
+ *   - gated by ?token=<ADMIN_PREVIEW_TOKEN> env match (fail-closed)
+ *
+ * SSR only (export const prerender = false) so the token check + queries
+ * run at request time. Service-role client never reaches the browser.
+ */
+export const prerender = false;
+
+import AdminBanner from "@/components/admin/AdminBanner.astro";
+import AdminErrorsTable from "@/components/admin/AdminErrorsTable.astro";
+import AdminRunsTable from "@/components/admin/AdminRunsTable.astro";
+import AdminSourcesTable from "@/components/admin/AdminSourcesTable.astro";
+import { adminT } from "@/i18n/admin";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import {
+  type FormattedErrorRow,
+  type ScrapeErrorRow,
+  type ScrapeRunRow,
+  type SourceHealth,
+  type SourceRow,
+  buildSourceHealth,
+  formatErrorRow,
+  formatRelative,
+} from "@/lib/admin-scraping-format";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+// ── Token gate (REQ-ROUTE-01 + REQ-ROUTE-02) ─────────────────────────────────
+// Read ADMIN_PREVIEW_TOKEN via process.env so it resolves at REQUEST TIME
+// on Vercel instead of being inlined into the SSR bundle at build time.
+// This lets the operator rotate the token from the Vercel dashboard without
+// a rebuild and avoids shipping the secret inside a deployment artifact.
+const token = Astro.url.searchParams.get("token");
+const expected = typeof process !== "undefined" ? process.env.ADMIN_PREVIEW_TOKEN : undefined;
+
+if (!expected || !token || token !== expected) {
+  return new Response(
+    '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>404</title></head><body><h1>404</h1></body></html>',
+    {
+      status: 404,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store, private",
+      },
+    }
+  );
+}
+
+// ── Response headers (REQ-ROUTE-03) ──────────────────────────────────────────
+Astro.response.headers.set("Cache-Control", "no-store, private");
+
+const now = new Date();
+
+// Supabase embed result shapes (the generated types do not auto-resolve inner
+// joins, so we cast the data once per query).
+type RunWithSource = ScrapeRunRow & {
+  sources: { slug: string; display_name: string } | null;
+};
+type ErrorWithRun = ScrapeErrorRow & {
+  scrape_runs: { source_id: number; sources: { slug: string } | null } | null;
+};
+
+type RunRow = ScrapeRunRow & { source_slug: string };
+
+let runs: RunRow[] = [];
+let errors: FormattedErrorRow[] = [];
+let sources: SourceHealth[] = [];
+let degraded = false;
+
+if (supabaseAdmin == null) {
+  degraded = true;
+} else {
+  const [runsRes, errorsRes, sourcesRes, recentRunsRes] = await Promise.allSettled([
+    supabaseAdmin
+      .from("scrape_runs")
+      .select(
+        "id, source_id, started_at, finished_at, duration_ms, items_found, items_new, items_updated, items_errored, sources!inner(slug, display_name)"
+      )
+      .order("started_at", { ascending: false })
+      .limit(20),
+    supabaseAdmin
+      .from("scrape_errors")
+      .select(
+        "id, run_id, url, error_type, message, occurred_at, scrape_runs!inner(source_id, sources!inner(slug))"
+      )
+      .order("occurred_at", { ascending: false })
+      .limit(20),
+    supabaseAdmin.from("sources").select("*").order("slug", { ascending: true }),
+    supabaseAdmin
+      .from("scrape_runs")
+      .select("source_id, started_at, items_errored")
+      .order("started_at", { ascending: false })
+      .limit(200),
+  ]);
+
+  if (runsRes.status === "fulfilled" && !runsRes.value.error && runsRes.value.data) {
+    const rows = runsRes.value.data as unknown as RunWithSource[];
+    runs = rows.map((r) => ({
+      ...r,
+      source_slug: r.sources?.slug ?? "desconocida",
+    }));
+  } else {
+    degraded = true;
+  }
+
+  if (errorsRes.status === "fulfilled" && !errorsRes.value.error && errorsRes.value.data) {
+    const rows = errorsRes.value.data as unknown as ErrorWithRun[];
+    const slugByRun = new Map<number, string>();
+    for (const r of rows) {
+      const slug = r.scrape_runs?.sources?.slug;
+      if (r.run_id && slug) slugByRun.set(r.run_id, slug);
+    }
+    errors = rows.map((r) => formatErrorRow(r, slugByRun, now));
+  } else {
+    degraded = true;
+  }
+
+  if (
+    sourcesRes.status === "fulfilled" &&
+    !sourcesRes.value.error &&
+    sourcesRes.value.data &&
+    recentRunsRes.status === "fulfilled" &&
+    !recentRunsRes.value.error &&
+    recentRunsRes.value.data
+  ) {
+    sources = buildSourceHealth(
+      sourcesRes.value.data as SourceRow[],
+      recentRunsRes.value.data as Array<
+        Pick<ScrapeRunRow, "source_id" | "started_at" | "items_errored">
+      >,
+      now
+    );
+  } else {
+    degraded = true;
+  }
+}
+
+const refreshed = formatRelative(now.toISOString(), now);
+---
+
+<BaseLayout
+  title={adminT("page.title")}
+  description={adminT("page.subheading")}
+  locale="es"
+  path="/admin/scraping/"
+  noindex
+>
+  <Fragment slot="head">
+    <meta name="referrer" content="no-referrer" />
+  </Fragment>
+
+  <main class="mx-auto max-w-6xl space-y-8 px-4 py-8">
+    <header class="flex flex-col gap-1 border-b border-[var(--color-border)] pb-6">
+      <h1 class="text-3xl font-bold">{adminT("page.heading")}</h1>
+      <p class="text-sm text-[var(--color-muted)]">{adminT("page.subheading")}</p>
+      <p class="text-xs text-[var(--color-muted)]">
+        {adminT("page.refreshedAt").replace("{when}", refreshed)}
+      </p>
+    </header>
+
+    <AdminBanner show={degraded} />
+
+    <AdminRunsTable rows={runs} />
+    <AdminErrorsTable rows={errors} />
+    <AdminSourcesTable rows={sources} />
+  </main>
+</BaseLayout>
