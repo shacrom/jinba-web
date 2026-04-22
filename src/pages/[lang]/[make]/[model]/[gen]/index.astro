@@ -409,6 +409,20 @@ const ogImage =
             variant="compact"
             ctaUrl={pricesUrl}
           />
+          {/* M5: Calculator CTA — REQ-CALC-ROUTE-03. */}
+          <aside
+            class="mt-4 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-4 not-prose"
+            aria-labelledby="calc-cta-heading"
+          >
+            <p id="calc-cta-heading" class="text-sm font-medium text-[var(--color-fg)]">{tr("calc.cta.model")}</p>
+            <p class="mt-1 text-xs text-[var(--color-muted)]">{tr("calc.cta.modelBody")}</p>
+            <a
+              href={`/${lang}/calculator/?make=${g.models.makes.slug}&model=${g.models.slug}&gen=${g.slug}`}
+              class="mt-3 inline-block rounded-[var(--radius)] bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-[var(--color-accent-fg)] no-underline hover:bg-[var(--color-accent-hot)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+            >
+              {tr("calc.cta.modelCtaLabel")}
+            </a>
+          </aside>
         </section>
 
         {/* Buying guide */}

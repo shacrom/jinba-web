@@ -1,0 +1,77 @@
+---
+/**
+ * src/pages/[lang]/calculator/index.astro — M5 (T11)
+ * Static shell for the fair-price calculator.
+ * - 2 prerendered pages (ES + EN)
+ * - Server-loads taxonomy (Supabase → seed fallback) and injects it into the
+ *   React island as props, so cascading selects work with zero runtime DB calls.
+ * - Mounts `<CalculatorForm client:load>` — the page is purpose-built for
+ *   interaction, so eager hydration is correct here.
+ * REQ-CALC-ROUTE-01, REQ-CALC-FORM-01.
+ */
+import HomeFooter from "@/components/home/HomeFooter.astro";
+import HomeNav from "@/components/home/HomeNav.astro";
+import CalculatorForm from "@/components/islands/CalculatorForm.tsx";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { loadCalcTaxonomy } from "@/lib/calculator-taxonomy";
+
+export async function getStaticPaths() {
+  return [
+    { params: { lang: "es" }, props: { lang: "es" as Locale } },
+    { params: { lang: "en" }, props: { lang: "en" as Locale } },
+  ];
+}
+
+const { lang } = Astro.props as { lang: Locale };
+const tr = t(lang);
+const taxonomy = await loadCalcTaxonomy();
+const path = `/${lang}/calculator/`;
+
+const labels = {
+  make: tr("calc.form.make"),
+  model: tr("calc.form.model"),
+  gen: tr("calc.form.gen"),
+  trim: tr("calc.form.trim"),
+  year: tr("calc.form.year"),
+  km: tr("calc.form.km"),
+  condition: tr("calc.form.condition"),
+  submit: tr("calc.form.submit"),
+  loading: tr("calc.form.loading"),
+  errorRequired: tr("calc.form.errorRequired"),
+  errorGeneric: tr("calc.form.errorGeneric"),
+  trimAny: tr("calc.form.trimAny"),
+  resultHeading: tr("calc.result.heading"),
+  estimate: tr("calc.result.estimate"),
+  range: tr("calc.result.range"),
+  basis: tr("calc.result.basis"),
+  unavailable: tr("calc.result.unavailable"),
+  howItWorks: tr("calc.result.howItWorks"),
+  conditionOpts: {
+    excellent: tr("calc.condition.excellent"),
+    good: tr("calc.condition.good"),
+    fair: tr("calc.condition.fair"),
+    rough: tr("calc.condition.rough"),
+  },
+};
+---
+
+<BaseLayout
+  title={tr("calc.pageTitle")}
+  description={tr("calc.pageDescription")}
+  locale={lang}
+  path={path}
+>
+  <div class="min-h-screen">
+    <HomeNav locale={lang} />
+    <main class="mx-auto max-w-3xl px-6 py-12">
+      <header class="mb-8 text-center">
+        <h1 class="text-3xl font-semibold tracking-tight">{tr("calc.heading")}</h1>
+        <p class="mt-2 text-[var(--color-muted)]">{tr("calc.subtitle")}</p>
+      </header>
+      <CalculatorForm client:load taxonomy={taxonomy} locale={lang} labels={labels} />
+    </main>
+    <HomeFooter locale={lang} />
+  </div>
+</BaseLayout>

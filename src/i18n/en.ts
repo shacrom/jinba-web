@@ -139,6 +139,43 @@ export const en: Dict = DictSchema.parse({
   "priceHistory.trend.up": "rising",
   "priceHistory.trend.down": "falling",
   "priceHistory.trend.flat": "stable",
+
+  // ── calculator (M5) ──
+  "nav.calculator": "Calculator",
+  "calc.pageTitle": "Fair-price calculator | Jinba",
+  "calc.pageDescription":
+    "Estimate the fair price of a used car based on real listings from the past 90 days.",
+  "calc.heading": "Fair-price calculator",
+  "calc.subtitle":
+    "Pick model, year, mileage, and condition. We return an estimate grounded in current market data.",
+  "calc.form.make": "Make",
+  "calc.form.model": "Model",
+  "calc.form.gen": "Generation",
+  "calc.form.trim": "Trim",
+  "calc.form.year": "Year",
+  "calc.form.km": "Kilometers",
+  "calc.form.condition": "Condition",
+  "calc.form.submit": "Calculate price",
+  "calc.form.loading": "Calculating…",
+  "calc.form.errorRequired": "Fill in the required fields to continue.",
+  "calc.form.errorGeneric": "We couldn't compute the price. Please try again in a moment.",
+  "calc.form.trimAny": "Any trim",
+  "calc.condition.excellent": "Excellent",
+  "calc.condition.good": "Good",
+  "calc.condition.fair": "Fair",
+  "calc.condition.rough": "Rough",
+  "calc.result.heading": "Estimated fair price",
+  "calc.result.estimate": "Estimate",
+  "calc.result.range": "Reasonable range",
+  "calc.result.basis":
+    "Based on {count} listings over the last {days} days (weighted median {median}).",
+  "calc.result.unavailable": "Not enough data yet to estimate this price.",
+  "calc.result.howItWorks":
+    "The estimate is based on the weighted median of listings from the past 90 days, adjusted for mileage (±25%) and condition (±25%).",
+  "calc.cta.model": "Estimate for your car",
+  "calc.cta.modelBody":
+    "Does your car belong to this generation? Get a tailored estimate using your mileage and condition.",
+  "calc.cta.modelCtaLabel": "Open calculator",
 });
 
 const DICTS = { es, en } as const satisfies Record<Locale, Dict>;

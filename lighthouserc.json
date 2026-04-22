@@ -11,7 +11,9 @@
         "/en/listings/index.html",
         "/es/mazda/mx-5/na/listings/index.html",
         "/es/mazda/mx-5/na/prices/index.html",
-        "/en/mazda/mx-5/na/prices/index.html"
+        "/en/mazda/mx-5/na/prices/index.html",
+        "/es/calculator/index.html",
+        "/en/calculator/index.html"
       ]
     },
     "assert": {
