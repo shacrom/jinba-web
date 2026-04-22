@@ -5,6 +5,7 @@ import LivePriceStats from "@/components/model/LivePriceStats.astro";
 import ModelFooter from "@/components/model/ModelFooter.astro";
 import ModelHero from "@/components/model/ModelHero.astro";
 import ModificationsList from "@/components/model/ModificationsList.astro";
+import PriceHistoryChart from "@/components/model/PriceHistoryChart.astro";
 import RelatedListingsStrip from "@/components/model/RelatedListingsStrip.astro";
 import SpecBand from "@/components/model/SpecBand.astro";
 import TocSidebar from "@/components/model/TocSidebar.astro";
@@ -16,10 +17,12 @@ import { t } from "@/i18n/en";
  * Static model page route. getStaticPaths() generates 10 paths (5 gens × 2 locales).
  * Falls back to taxonomy-seed.json when Supabase returns 0 rows (CI / no DB).
  * REQ-ROUTE-01 through REQ-ROUTE-04, SC-10.
+ * M4 (T09): compact price-history chart rendered after LivePriceStats.
  */
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { buildCarJsonLd } from "@/lib/jsonld";
 import type { FaultEntry, HeroImage, ModEntry, SiblingGen, TrimDisplay } from "@/lib/model-types";
+import { getPriceHistory } from "@/lib/price-history";
 import { supabase } from "@/lib/supabase";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -317,6 +320,14 @@ const sections = [
   { id: "modifications", title: tr("model.toc.modifications") },
 ];
 
+// M4: compact price-history chart after LivePriceStats — REQ-PH-04.
+const historyPoints = await getPriceHistory({
+  generationId: g.id,
+  currency: "EUR",
+  windowDays: 365,
+});
+const pricesUrl = `/${lang}/${g.models.makes.slug}/${g.models.slug}/${g.slug}/prices/`;
+
 const ogImage =
   heroImage?.url ??
   new URL(
@@ -391,6 +402,13 @@ const ogImage =
             <p class="text-[var(--color-muted)] italic">{tr("section.comingSoon")}</p>
           )}
           <LivePriceStats generationId={g.id} locale={lang} />
+          <PriceHistoryChart
+            points={historyPoints}
+            currency="EUR"
+            locale={lang}
+            variant="compact"
+            ctaUrl={pricesUrl}
+          />
         </section>
 
         {/* Buying guide */}

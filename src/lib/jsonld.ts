@@ -4,10 +4,12 @@
  * T01 (M3): buildItemListJsonLd — ItemList for list pages.
  *           buildOfferJsonLd   — Offer for detail page.
  * T01 (M1): buildOrganizationJsonLd + buildWebsiteJsonLd — Home @graph.
+ * T06 (M4): buildPriceHistoryJsonLd — Dataset for /prices/ page.
  */
 import type { Locale } from "@/i18n/config";
 import type {
   Car,
+  Dataset,
   ItemList,
   ListItem,
   Offer,
@@ -184,4 +186,55 @@ export function buildWebsiteJsonLd(site: string, locale: Locale): WithContext<We
     },
   };
   return obj as unknown as WithContext<WebSite>;
+}
+
+// ── M4 helpers ──────────────────────────────────────────────────────────────
+
+export interface PriceHistoryJsonLdInput {
+  name: string;
+  description: string;
+  url: string;
+  locale: Locale;
+  points: Array<{
+    date: string;
+    median: number;
+    p25: number;
+    p75: number;
+    count: number;
+  }>;
+  currency: string;
+  siteOrgId: string; // e.g. "https://site/#organization"
+}
+
+/**
+ * Builds a Schema.org Dataset JSON-LD block for the price-history page.
+ * Returns null when there aren't enough points to form a meaningful dataset
+ * (spec parity with REQ-PH-02: chart hides when <3 points).
+ * REQ-PH-07, REQ-JSONLD-01.
+ */
+export function buildPriceHistoryJsonLd(
+  input: PriceHistoryJsonLdInput
+): WithContext<Dataset> | null {
+  if (input.points.length < 3) return null;
+
+  const first = input.points[0].date;
+  const last = input.points[input.points.length - 1].date;
+
+  const obj: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: input.name,
+    description: input.description,
+    url: input.url,
+    inLanguage: input.locale === "es" ? "es-ES" : "en-US",
+    temporalCoverage: `${first}/${last}`,
+    creator: { "@id": input.siteOrgId },
+    variableMeasured: [
+      { "@type": "PropertyValue", name: "median", unitText: input.currency },
+      { "@type": "PropertyValue", name: "p25", unitText: input.currency },
+      { "@type": "PropertyValue", name: "p75", unitText: input.currency },
+      { "@type": "PropertyValue", name: "count" },
+    ],
+  };
+  return obj as unknown as WithContext<Dataset>;
 }

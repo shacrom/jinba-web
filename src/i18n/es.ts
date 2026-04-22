@@ -119,6 +119,22 @@ export const DictSchema = z.object({
   "listings.card.imgAlt": z.string(),
   // breadcrumb
   "listings.breadcrumb.listings": z.string(),
+
+  // ── price history (M4 — 14 new keys) ──
+  "priceHistory.pageTitle": z.string(),
+  "priceHistory.pageDescription": z.string(),
+  "priceHistory.heading": z.string(),
+  "priceHistory.empty": z.string(),
+  "priceHistory.viewFull": z.string(),
+  "priceHistory.ariaLabel": z.string(),
+  "priceHistory.legend.median": z.string(),
+  "priceHistory.legend.band": z.string(),
+  "priceHistory.table.heading": z.string(),
+  "priceHistory.table.date": z.string(),
+  "priceHistory.table.count": z.string(),
+  "priceHistory.trend.up": z.string(),
+  "priceHistory.trend.down": z.string(),
+  "priceHistory.trend.flat": z.string(),
 });
 
 export type Dict = z.infer<typeof DictSchema>;
@@ -244,4 +260,22 @@ export const es = DictSchema.parse({
   "listings.card.imgAlt": "Foto de {make} {model} {year}",
   // breadcrumb
   "listings.breadcrumb.listings": "Anuncios",
+
+  // ── price history (M4) ──
+  "priceHistory.pageTitle": "Histórico de precios — {gen} | Jinba",
+  "priceHistory.pageDescription":
+    "Evolución del precio mediano y la horquilla p25–p75 durante el último año para este modelo.",
+  "priceHistory.heading": "Histórico de precios",
+  "priceHistory.empty": "Aún no hay datos suficientes para mostrar el histórico.",
+  "priceHistory.viewFull": "Ver histórico completo",
+  "priceHistory.ariaLabel":
+    "Histórico de precios mediano del {first} al {last}, de {from} a {to} ({direction}).",
+  "priceHistory.legend.median": "Precio mediano",
+  "priceHistory.legend.band": "Rango p25–p75",
+  "priceHistory.table.heading": "Detalle por fecha",
+  "priceHistory.table.date": "Fecha",
+  "priceHistory.table.count": "Anuncios",
+  "priceHistory.trend.up": "subida",
+  "priceHistory.trend.down": "bajada",
+  "priceHistory.trend.flat": "estable",
 });

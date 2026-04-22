@@ -121,6 +121,24 @@ export const en: Dict = DictSchema.parse({
   "listings.card.imgAlt": "Photo of {make} {model} {year}",
   // breadcrumb
   "listings.breadcrumb.listings": "Listings",
+
+  // ── price history (M4) ──
+  "priceHistory.pageTitle": "Price history — {gen} | Jinba",
+  "priceHistory.pageDescription":
+    "Median price and p25–p75 range evolution over the last year for this model.",
+  "priceHistory.heading": "Price history",
+  "priceHistory.empty": "Not enough data yet to show price history.",
+  "priceHistory.viewFull": "View full history",
+  "priceHistory.ariaLabel":
+    "Median price history from {first} to {last}, {from} to {to} ({direction}).",
+  "priceHistory.legend.median": "Median price",
+  "priceHistory.legend.band": "p25–p75 range",
+  "priceHistory.table.heading": "Breakdown by date",
+  "priceHistory.table.date": "Date",
+  "priceHistory.table.count": "Listings",
+  "priceHistory.trend.up": "rising",
+  "priceHistory.trend.down": "falling",
+  "priceHistory.trend.flat": "stable",
 });
 
 const DICTS = { es, en } as const satisfies Record<Locale, Dict>;

@@ -1,0 +1,251 @@
+---
+/**
+ * src/pages/[lang]/[make]/[model]/[gen]/prices/index.astro — M4 T08
+ * Static price-history page. getStaticPaths emits 10 pages (5 gens × 2 locales).
+ * Full-width chart + breakdown table + Dataset JSON-LD.
+ * REQ-PH-05, REQ-PH-07, REQ-PH-10.
+ */
+import PriceHistoryChart from "@/components/model/PriceHistoryChart.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { buildPriceHistoryJsonLd } from "@/lib/jsonld";
+import { getPriceHistory } from "@/lib/price-history";
+import { supabase } from "@/lib/supabase";
+
+interface SeedEntry {
+  make: string;
+  model: string;
+  gen: string;
+}
+
+interface GenTaxonomy {
+  id: number;
+  slug: string;
+  name_es: string;
+  name_en: string;
+  year_start: number;
+  year_end: number | null;
+  models: {
+    slug: string;
+    name_es: string;
+    name_en: string;
+    makes: { slug: string; name_es: string; name_en: string };
+  };
+}
+
+export async function getStaticPaths() {
+  const { readFileSync } = await import("node:fs");
+  const { resolve } = await import("node:path");
+  const { supabase: sb } = await import("@/lib/supabase");
+
+  function readSeed(): SeedEntry[] {
+    try {
+      const p = resolve("scripts/data/taxonomy-seed.json");
+      return JSON.parse(readFileSync(p, "utf8")) as SeedEntry[];
+    } catch {
+      return [];
+    }
+  }
+
+  function buildFallbackPaths(
+    seed: SeedEntry[]
+  ): Array<{ params: Record<string, string>; props: { g: GenTaxonomy; lang: Locale } }> {
+    const paths: Array<{
+      params: Record<string, string>;
+      props: { g: GenTaxonomy; lang: Locale };
+    }> = [];
+    let idCounter = 1;
+    for (const entry of seed) {
+      const g: GenTaxonomy = {
+        id: idCounter++,
+        slug: entry.gen,
+        name_es: entry.gen.toUpperCase(),
+        name_en: entry.gen.toUpperCase(),
+        year_start: 1980,
+        year_end: null,
+        models: {
+          slug: entry.model,
+          name_es: entry.model,
+          name_en: entry.model,
+          makes: { slug: entry.make, name_es: entry.make, name_en: entry.make },
+        },
+      };
+      for (const lang of ["es", "en"] as Locale[]) {
+        paths.push({
+          params: { lang, make: entry.make, model: entry.model, gen: entry.gen },
+          props: { g, lang },
+        });
+      }
+    }
+    return paths;
+  }
+
+  let rows: GenTaxonomy[] = [];
+  if (sb) {
+    try {
+      const { data, error } = await sb.from("generations").select(`
+        id, slug, name_es, name_en, year_start, year_end,
+        models!inner ( slug, name_es, name_en, makes!inner ( slug, name_es, name_en ) )
+      `);
+      if (!error && data && data.length > 0) {
+        rows = data as unknown as GenTaxonomy[];
+      }
+    } catch {
+      // fall through to seed
+    }
+  }
+
+  if (rows.length > 0) {
+    const paths: Array<{
+      params: Record<string, string>;
+      props: { g: GenTaxonomy; lang: Locale };
+    }> = [];
+    for (const g of rows) {
+      if (!g.models?.makes) continue;
+      for (const lang of ["es", "en"] as Locale[]) {
+        paths.push({
+          params: { lang, make: g.models.makes.slug, model: g.models.slug, gen: g.slug },
+          props: { g, lang },
+        });
+      }
+    }
+    return paths;
+  }
+
+  return buildFallbackPaths(readSeed());
+}
+
+// ── Page props ────────────────────────────────────────────────────────────────
+
+const { g, lang } = Astro.props as { g: GenTaxonomy; lang: Locale };
+const tr = t(lang);
+
+const name = (x: { name_es: string; name_en: string }): string =>
+  lang === "es" ? x.name_es : x.name_en;
+const makeName = name(g.models.makes);
+const modelName = name(g.models);
+const genName = name(g);
+
+const path = `/${lang}/${g.models.makes.slug}/${g.models.slug}/${g.slug}/prices/`;
+
+const title = tr("priceHistory.pageTitle").replace("{gen}", `${makeName} ${modelName} ${genName}`);
+const description = tr("priceHistory.pageDescription");
+
+// Fetch one-year history (empty DB returns []).
+const points = await getPriceHistory({ generationId: g.id, currency: "EUR", windowDays: 365 });
+
+// Try to resolve a hero image from any active listing for OG.
+let ogImage: string | undefined;
+if (supabase) {
+  try {
+    const { data: heroRows } = await supabase
+      .from("listings_public")
+      .select("id, listing_photos!inner(storage_path, privacy_processed_at)")
+      .eq("generation_id", g.id)
+      .eq("status", "active")
+      .not("listing_photos.privacy_processed_at", "is", null)
+      .limit(1);
+    const photo = (heroRows?.[0] as Record<string, unknown> | undefined)?.listing_photos as
+      | Array<{ storage_path: string | null }>
+      | undefined;
+    const storagePath = photo?.[0]?.storage_path;
+    if (storagePath) {
+      const base = import.meta.env.PUBLIC_SUPABASE_URL as string | undefined;
+      if (base) {
+        ogImage = `${base}/storage/v1/object/public/listing-photos/${storagePath}`;
+      }
+    }
+  } catch {
+    // no hero
+  }
+}
+
+const site = (import.meta.env.PUBLIC_SITE_URL as string | undefined) ?? "https://jinba.example.com";
+
+const jsonLd = buildPriceHistoryJsonLd({
+  name: title,
+  description,
+  url: new URL(path, site).toString(),
+  locale: lang,
+  points,
+  currency: "EUR",
+  siteOrgId: `${site}#organization`,
+});
+
+const fmt = new Intl.NumberFormat(lang === "es" ? "es-ES" : "en-US", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
+const dateFmt = new Intl.DateTimeFormat(lang === "es" ? "es-ES" : "en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+const formatDate = (iso: string): string => dateFmt.format(new Date(iso));
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  locale={lang}
+  path={path}
+  image={ogImage}
+  jsonLd={jsonLd ?? undefined}
+>
+  <main class="mx-auto max-w-6xl px-4 pb-16">
+    {/* Breadcrumb */}
+    <nav aria-label="breadcrumb" class="py-4 text-sm text-[var(--color-muted)]">
+      <ol class="flex flex-wrap items-center gap-1">
+        <li><a href={`/${lang}/`} class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]">{tr("nav.home")}</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href={`/${lang}/${g.models.makes.slug}/`} class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]">{makeName}</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href={`/${lang}/${g.models.makes.slug}/${g.models.slug}/${g.slug}/`} class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]">{genName}</a></li>
+        <li aria-hidden="true">›</li>
+        <li><span aria-current="page">{tr("priceHistory.heading")}</span></li>
+      </ol>
+    </nav>
+
+    <header class="mb-6">
+      <h1 class="text-3xl font-semibold tracking-tight md:text-4xl">
+        {tr("priceHistory.heading")}: {makeName} {modelName} {genName}
+      </h1>
+      <p class="mt-2 text-[var(--color-muted)]">{description}</p>
+    </header>
+
+    <section aria-labelledby="chart-heading">
+      <h2 id="chart-heading" class="sr-only">{tr("priceHistory.heading")}</h2>
+      <PriceHistoryChart points={points} currency="EUR" locale={lang} variant="full" />
+    </section>
+
+    {points.length >= 3 && (
+      <section aria-labelledby="breakdown-heading" class="mt-10">
+        <h2 id="breakdown-heading" class="text-xl font-semibold">{tr("priceHistory.table.heading")}</h2>
+        <div class="mt-4 overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)]">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-[var(--color-border)] text-left text-xs uppercase tracking-widest text-[var(--color-muted)]">
+                <th scope="col" class="px-4 py-3">{tr("priceHistory.table.date")}</th>
+                <th scope="col" class="px-4 py-3">{tr("priceHistory.legend.median")}</th>
+                <th scope="col" class="px-4 py-3">{tr("priceHistory.legend.band")}</th>
+                <th scope="col" class="px-4 py-3 text-right">{tr("priceHistory.table.count")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {points.map((p) => (
+                <tr class="border-b border-[var(--color-border)]/60 last:border-0">
+                  <td class="px-4 py-2 font-mono">{formatDate(p.date)}</td>
+                  <td class="px-4 py-2">{fmt.format(p.median)}</td>
+                  <td class="px-4 py-2">{fmt.format(p.p25)} – {fmt.format(p.p75)}</td>
+                  <td class="px-4 py-2 text-right">{p.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )}
+  </main>
+</BaseLayout>
