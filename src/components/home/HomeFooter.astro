@@ -37,6 +37,13 @@ const imageryPath = locale === "es" ? "/es/legal/imagenes" : "/en/legal/imagery"
     </a>
     <span aria-hidden="true">·</span>
     <a
+      href={`/${locale}/guides/`}
+      class="underline underline-offset-2 transition-colors hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+    >
+      {tr("nav.guides")}
+    </a>
+    <span aria-hidden="true">·</span>
+    <a
       href={`/${alt}/`}
       hreflang={alt}
       class="transition-colors hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"

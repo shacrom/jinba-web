@@ -8,6 +8,7 @@
  */
 import type { Locale } from "@/i18n/config";
 import type {
+  Article,
   Car,
   Dataset,
   ItemList,
@@ -186,6 +187,63 @@ export function buildWebsiteJsonLd(site: string, locale: Locale): WithContext<We
     },
   };
   return obj as unknown as WithContext<WebSite>;
+}
+
+// ── M6 helpers ──────────────────────────────────────────────────────────────
+
+export interface ArticleJsonLdInput {
+  /** Article headline — rendered as `<h1>` on detail page too. */
+  title: string;
+  /** Short summary (meta description). */
+  description: string;
+  /** ISO date string (e.g. `2026-03-15T00:00:00.000Z`). */
+  datePublished: string;
+  /** Optional ISO date for last update; maps to `dateModified`. */
+  dateModified?: string;
+  /** Optional author name — rendered as `Person`. */
+  author?: string;
+  /** Absolute URL of the cover image. Falls back to `/placeholders/home-hero.webp`. */
+  image?: string;
+  /** Absolute URL of the article page (used for `mainEntityOfPage.@id`). */
+  url: string;
+  /** Active locale — maps to `inLanguage`. */
+  locale: Locale;
+  /** `#organization` node `@id` on the same origin. */
+  siteOrgId: string;
+}
+
+/**
+ * Builds a Schema.org Article JSON-LD block for editorial guides (M6).
+ * Always emits a valid shape with `headline`, `image`, `datePublished`,
+ * `inLanguage`, and `publisher`. Omits `author` when not provided.
+ * REQ-JSONLD-01/02.
+ */
+export function buildArticleJsonLd(input: ArticleJsonLdInput): WithContext<Article> {
+  // Image fallback: absolute URL on the same origin as the article URL.
+  let image = input.image;
+  if (!image) {
+    try {
+      image = `${new URL(input.url).origin}/placeholders/home-hero.webp`;
+    } catch {
+      // Defensive: if URL parsing fails we still emit a sensible relative path.
+      image = "/placeholders/home-hero.webp";
+    }
+  }
+
+  const obj: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: input.title,
+    description: input.description,
+    datePublished: input.datePublished,
+    image,
+    inLanguage: input.locale === "es" ? "es-ES" : "en-US",
+    publisher: { "@id": input.siteOrgId },
+    mainEntityOfPage: { "@type": "WebPage", "@id": input.url },
+  };
+  if (input.dateModified) obj.dateModified = input.dateModified;
+  if (input.author) obj.author = { "@type": "Person", name: input.author };
+  return obj as unknown as WithContext<Article>;
 }
 
 // ── M4 helpers ──────────────────────────────────────────────────────────────

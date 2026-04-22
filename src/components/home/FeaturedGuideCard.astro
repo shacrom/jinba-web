@@ -6,6 +6,7 @@
  */
 import type { CollectionEntry } from "astro:content";
 import type { Locale } from "@/i18n/config";
+import { guideSlug } from "@/lib/reading-time";
 
 export interface Props {
   entry: CollectionEntry<"guides">;
@@ -14,10 +15,11 @@ export interface Props {
 
 const { entry, locale } = Astro.props;
 
-// Astro 6 glob loader slugifies filename segments — strip the locale suffix
-// so the canonical "sample.es" entry routes to /{locale}/guides/sample/.
-const cleanId = entry.id.replace(/\.(es|en)$/, "");
-const href = `/${locale}/guides/${cleanId}/`;
+// Astro 6 glob loader slugifies filename segments AND strips dots, so
+// `sample.es.mdx` becomes id `samplees`. Strip the locale suffix with the
+// shared helper (M6 fix — M1 had the same latent bug).
+const slug = guideSlug(entry.id, entry.data.locale);
+const href = `/${locale}/guides/${slug}/`;
 
 const dateFmt = new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-US", {
   year: "numeric",

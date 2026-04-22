@@ -136,6 +136,18 @@ export const DictSchema = z.object({
   "priceHistory.trend.down": z.string(),
   "priceHistory.trend.flat": z.string(),
 
+  // ── guides (M6 — 10 new keys) ──
+  "guides.index.title": z.string(),
+  "guides.index.description": z.string(),
+  "guides.index.heading": z.string(),
+  "guides.index.empty": z.string(),
+  "guides.detail.readingTimeMin": z.string(),
+  "guides.detail.byAuthor": z.string(),
+  "guides.detail.publishedOn": z.string(),
+  "guides.detail.tocHeading": z.string(),
+  "guides.detail.skipToContent": z.string(),
+  "guides.detail.backToIndex": z.string(),
+
   // ── calculator (M5 — 30 new keys) ──
   "nav.calculator": z.string(),
   "calc.pageTitle": z.string(),
@@ -310,6 +322,19 @@ export const es = DictSchema.parse({
   "priceHistory.trend.up": "subida",
   "priceHistory.trend.down": "bajada",
   "priceHistory.trend.flat": "estable",
+
+  // ── guides (M6) ──
+  "guides.index.title": "Guías editoriales | Jinba",
+  "guides.index.description":
+    "Guías editoriales sobre inspección, historia y compra de coches con alma. Contenido cuidado, sin paja.",
+  "guides.index.heading": "Guías editoriales",
+  "guides.index.empty": "Aún no hay guías publicadas para este idioma.",
+  "guides.detail.readingTimeMin": "{min} min de lectura",
+  "guides.detail.byAuthor": "Por {author}",
+  "guides.detail.publishedOn": "Publicado el {date}",
+  "guides.detail.tocHeading": "Índice",
+  "guides.detail.skipToContent": "Saltar al contenido",
+  "guides.detail.backToIndex": "Volver al índice",
 
   // ── calculator (M5) ──
   "nav.calculator": "Calculadora",

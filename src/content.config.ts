@@ -14,6 +14,11 @@ const guides = defineCollection({
     publishedAt: z.coerce.date(),
     updatedAt: z.coerce.date().optional(),
     cover: z.string().optional(),
+    // M6 editorial fields — all optional, additive extension
+    cover_image: z.string().optional(),
+    author: z.string().optional(),
+    reading_time_min: z.number().int().positive().optional(),
+    published_at: z.coerce.date().optional(),
     tags: z.array(z.string()).default([]),
   }),
 });

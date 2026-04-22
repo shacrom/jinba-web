@@ -140,6 +140,19 @@ export const en: Dict = DictSchema.parse({
   "priceHistory.trend.down": "falling",
   "priceHistory.trend.flat": "stable",
 
+  // ── guides (M6) ──
+  "guides.index.title": "Editorial guides | Jinba",
+  "guides.index.description":
+    "Editorial guides on inspection, history, and buying soulful cars. Carefully written, no fluff.",
+  "guides.index.heading": "Editorial guides",
+  "guides.index.empty": "No guides are published in this language yet.",
+  "guides.detail.readingTimeMin": "{min} min read",
+  "guides.detail.byAuthor": "By {author}",
+  "guides.detail.publishedOn": "Published {date}",
+  "guides.detail.tocHeading": "Contents",
+  "guides.detail.skipToContent": "Skip to content",
+  "guides.detail.backToIndex": "Back to the index",
+
   // ── calculator (M5) ──
   "nav.calculator": "Calculator",
   "calc.pageTitle": "Fair-price calculator | Jinba",

@@ -1,0 +1,68 @@
+---
+/**
+ * GuideCard.astro — M6 T11
+ * Index card for a single guide entry. Mirrors FeaturedGuideCard but adds
+ * cover image / placeholder + reading time.
+ * REQ-INDEX-02, REQ-INDEX-03.
+ */
+import type { CollectionEntry } from "astro:content";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import { computeReadingTime, guideSlug } from "@/lib/reading-time";
+
+export interface Props {
+  entry: CollectionEntry<"guides">;
+  locale: Locale;
+}
+
+const { entry, locale } = Astro.props;
+const tr = t(locale);
+
+const slug = guideSlug(entry.id, entry.data.locale);
+const href = `/${locale}/guides/${slug}/`;
+const minutes = computeReadingTime(entry.body ?? "", entry.data.reading_time_min);
+
+const dateFmt = new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-US", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
+
+const cover = entry.data.cover_image ?? entry.data.cover;
+const readingLabel = tr("guides.detail.readingTimeMin").replace("{min}", String(minutes));
+---
+
+<a
+  href={href}
+  class="group block overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] transition-shadow hover:shadow-[var(--shadow-card)] hover:ring-2 hover:ring-[var(--color-ring)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+>
+  {
+    cover ? (
+      <img
+        src={cover}
+        alt=""
+        class="aspect-[16/9] w-full object-cover"
+        loading="lazy"
+        width="1200"
+        height="675"
+      />
+    ) : (
+      <div
+        class="aspect-[16/9] w-full bg-gradient-to-br from-[var(--color-card)] via-[var(--color-bg)] to-[var(--color-card)]"
+        aria-hidden="true"
+      />
+    )
+  }
+  <div class="p-5">
+    <p class="text-xs uppercase tracking-widest text-[var(--color-muted)]">
+      {dateFmt.format(entry.data.publishedAt)} <span aria-hidden="true">·</span> {readingLabel}
+    </p>
+    <h3 class="mt-2 text-lg font-semibold text-[var(--color-fg)]">{entry.data.title}</h3>
+    <p class="mt-2 text-sm text-[var(--color-muted)]">{entry.data.description}</p>
+    {
+      entry.data.tags.length > 0 && (
+        <p class="mt-3 text-xs text-[var(--color-muted)]">{entry.data.tags.join(" · ")}</p>
+      )
+    }
+  </div>
+</a>

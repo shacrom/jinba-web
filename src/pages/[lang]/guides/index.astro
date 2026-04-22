@@ -1,0 +1,79 @@
+---
+/**
+ * src/pages/[lang]/guides/index.astro — M6 T13
+ * Static editorial guides index. Emits 2 pages (es + en).
+ * Lists all guides for the active locale sorted by publishedAt desc.
+ * REQ-ROUTE-01, REQ-INDEX-01..05, REQ-A11Y-01.
+ */
+import { getCollection } from "astro:content";
+import GuideCard from "@/components/guides/GuideCard.astro";
+import HomeFooter from "@/components/home/HomeFooter.astro";
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+export async function getStaticPaths() {
+  return [
+    { params: { lang: "es" }, props: { lang: "es" as Locale } },
+    { params: { lang: "en" }, props: { lang: "en" as Locale } },
+  ];
+}
+
+const { lang } = Astro.props as { lang: Locale };
+const tr = t(lang);
+
+const all = await getCollection("guides", (e) => e.data.locale === lang);
+const entries = all.sort(
+  (a, b) => new Date(b.data.publishedAt).getTime() - new Date(a.data.publishedAt).getTime()
+);
+
+const path = `/${lang}/guides/`;
+const title = tr("guides.index.title");
+const description = tr("guides.index.description");
+---
+
+<BaseLayout title={title} description={description} locale={lang} path={path}>
+  <a
+    href="#guides-main"
+    class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-20 focus:rounded-[var(--radius-sm)] focus:border focus:border-[var(--color-border)] focus:bg-[var(--color-card)] focus:px-3 focus:py-2 focus:text-sm focus:text-[var(--color-fg)]"
+  >
+    {tr("guides.detail.skipToContent")}
+  </a>
+
+  <HomeNav locale={lang} />
+
+  <main id="guides-main" class="mx-auto max-w-6xl px-4 pb-16">
+    <nav aria-label="breadcrumb" class="py-4 text-sm text-[var(--color-muted)]">
+      <ol class="flex flex-wrap items-center gap-1">
+        <li>
+          <a
+            href={`/${lang}/`}
+            class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+          >
+            {tr("nav.home")}
+          </a>
+        </li>
+        <li aria-hidden="true">›</li>
+        <li><span aria-current="page">{tr("nav.guides")}</span></li>
+      </ol>
+    </nav>
+
+    <h1 class="mb-2 text-3xl font-bold">{tr("guides.index.heading")}</h1>
+    <p class="mb-8 max-w-2xl text-[var(--color-muted)]">{description}</p>
+
+    {
+      entries.length === 0 ? (
+        <p class="mt-6 text-sm text-[var(--color-muted)]">{tr("guides.index.empty")}</p>
+      ) : (
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {entries.map((entry) => (
+            <GuideCard entry={entry} locale={lang} />
+          ))}
+        </div>
+      )
+    }
+  </main>
+
+  <HomeFooter locale={lang} />
+</BaseLayout>
