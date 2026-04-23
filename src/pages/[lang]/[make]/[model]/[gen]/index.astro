@@ -1,5 +1,13 @@
 ---
 import { getCollection, render } from "astro:content";
+/**
+ * src/pages/[lang]/[make]/[model]/[gen]/index.astro — T27
+ * Static model page route. getStaticPaths() generates 10 paths (5 gens × 2 locales).
+ * Falls back to taxonomy-seed.json when Supabase returns 0 rows (CI / no DB).
+ * REQ-ROUTE-01 through REQ-ROUTE-04, SC-10.
+ * M4 (T09): compact price-history chart rendered after LivePriceStats.
+ */
+import HomeNav from "@/components/home/HomeNav.astro";
 import CommonFaultsTable from "@/components/model/CommonFaultsTable.astro";
 import LivePriceStats from "@/components/model/LivePriceStats.astro";
 import ModelFooter from "@/components/model/ModelFooter.astro";
@@ -12,13 +20,6 @@ import TocSidebar from "@/components/model/TocSidebar.astro";
 import TocSidebarMobile from "@/components/model/TocSidebarMobile.tsx";
 import type { Locale } from "@/i18n/config";
 import { t } from "@/i18n/en";
-/**
- * src/pages/[lang]/[make]/[model]/[gen]/index.astro — T27
- * Static model page route. getStaticPaths() generates 10 paths (5 gens × 2 locales).
- * Falls back to taxonomy-seed.json when Supabase returns 0 rows (CI / no DB).
- * REQ-ROUTE-01 through REQ-ROUTE-04, SC-10.
- * M4 (T09): compact price-history chart rendered after LivePriceStats.
- */
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { buildCarJsonLd } from "@/lib/jsonld";
 import type { FaultEntry, HeroImage, ModEntry, SiblingGen, TrimDisplay } from "@/lib/model-types";
@@ -389,6 +390,8 @@ const ogImage =
   image={ogImage}
   jsonLd={jsonLd}
 >
+
+  <HomeNav locale={lang} />
 
   <main class="mx-auto max-w-6xl px-4 pb-16">
     {/* Breadcrumb (REQ-SEO-01, visible nav) */}

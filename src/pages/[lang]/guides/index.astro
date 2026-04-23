@@ -23,7 +23,10 @@ export async function getStaticPaths() {
 const { lang } = Astro.props as { lang: Locale };
 const tr = t(lang);
 
-const all = await getCollection("guides", (e) => e.data.locale === lang);
+const all = await getCollection(
+  "guides",
+  (e) => e.data.locale === lang && !e.id.startsWith("sample")
+);
 const entries = all.sort(
   (a, b) => new Date(b.data.publishedAt).getTime() - new Date(a.data.publishedAt).getTime()
 );

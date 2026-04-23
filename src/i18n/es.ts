@@ -136,6 +136,12 @@ export const DictSchema = z.object({
   "priceHistory.trend.down": z.string(),
   "priceHistory.trend.flat": z.string(),
 
+  // ── models index ──
+  "models.index.title": z.string(),
+  "models.index.description": z.string(),
+  "models.index.heading": z.string(),
+  "models.index.empty": z.string(),
+
   // ── guides (M6 — 10 new keys) ──
   "guides.index.title": z.string(),
   "guides.index.description": z.string(),
@@ -357,6 +363,13 @@ export const es = DictSchema.parse({
   "priceHistory.trend.up": "subida",
   "priceHistory.trend.down": "bajada",
   "priceHistory.trend.flat": "estable",
+
+  // ── models index ──
+  "models.index.title": "Modelos | Jinba",
+  "models.index.description":
+    "Catálogo de modelos cubiertos en Jinba: datos, fallos conocidos y guía de compra.",
+  "models.index.heading": "Modelos",
+  "models.index.empty": "Aún no hay modelos cargados.",
 
   // ── guides (M6) ──
   "guides.index.title": "Guías editoriales | Jinba",

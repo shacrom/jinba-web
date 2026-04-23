@@ -141,6 +141,12 @@ export const en: Dict = DictSchema.parse({
   "priceHistory.trend.flat": "stable",
 
   // ── guides (M6) ──
+  "models.index.title": "Models | Jinba",
+  "models.index.description":
+    "Catalogue of models covered by Jinba: data, known faults, and buying guide.",
+  "models.index.heading": "Models",
+  "models.index.empty": "No models loaded yet.",
+
   "guides.index.title": "Editorial guides | Jinba",
   "guides.index.description":
     "Editorial guides on inspection, history, and buying soulful cars. Carefully written, no fluff.",

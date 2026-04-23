@@ -1,0 +1,194 @@
+---
+/**
+ * src/pages/[lang]/models/index.astro
+ * Models catalogue index. Emits 2 pages (es + en).
+ * Merges Supabase generation rows with taxonomy-seed.json rich entries.
+ */
+import FeaturedModelCard from "@/components/home/FeaturedModelCard.astro";
+import HomeFooter from "@/components/home/HomeFooter.astro";
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { supabase } from "@/lib/supabase";
+
+interface GenRow {
+  id: number;
+  slug: string;
+  name_es: string;
+  name_en: string;
+  year_start: number;
+  year_end: number | null;
+  chassis_code: string | null;
+  models: {
+    id: number;
+    slug: string;
+    name_es: string;
+    name_en: string;
+    makes: {
+      id: number;
+      slug: string;
+      name_es: string;
+      name_en: string;
+    };
+  };
+}
+
+interface SeedEntry {
+  make: string;
+  model: string;
+  gen: string;
+  make_name_es?: string;
+  make_name_en?: string;
+  model_name_es?: string;
+  model_name_en?: string;
+  gen_name_es?: string;
+  gen_name_en?: string;
+  chassis_code?: string;
+  year_start?: number;
+  year_end?: number;
+}
+
+export async function getStaticPaths() {
+  return [
+    { params: { lang: "es" }, props: { lang: "es" as Locale } },
+    { params: { lang: "en" }, props: { lang: "en" as Locale } },
+  ];
+}
+
+const { lang } = Astro.props as { lang: Locale };
+const tr = t(lang);
+
+function seedToRow(entry: SeedEntry, idBase: number): GenRow {
+  return {
+    id: idBase,
+    slug: entry.gen,
+    name_es: entry.gen_name_es ?? entry.gen.toUpperCase(),
+    name_en: entry.gen_name_en ?? entry.gen.toUpperCase(),
+    year_start: entry.year_start ?? 1980,
+    year_end: entry.year_end ?? null,
+    chassis_code: entry.chassis_code ?? null,
+    models: {
+      id: idBase + 1,
+      slug: entry.model,
+      name_es: entry.model_name_es ?? entry.model,
+      name_en: entry.model_name_en ?? entry.model,
+      makes: {
+        id: idBase + 2,
+        slug: entry.make,
+        name_es: entry.make_name_es ?? entry.make,
+        name_en: entry.make_name_en ?? entry.make,
+      },
+    },
+  };
+}
+
+async function readSeed(): Promise<SeedEntry[]> {
+  const { readFileSync } = await import("node:fs");
+  const { resolve } = await import("node:path");
+  try {
+    return JSON.parse(
+      readFileSync(resolve("scripts/data/taxonomy-seed.json"), "utf8")
+    ) as SeedEntry[];
+  } catch {
+    return [];
+  }
+}
+
+let rows: GenRow[] = [];
+
+if (supabase) {
+  try {
+    const { data } = await supabase.from("generations").select(`
+      id, slug, name_es, name_en, year_start, year_end, chassis_code,
+      models!inner (
+        id, slug, name_es, name_en,
+        makes!inner ( id, slug, name_es, name_en )
+      )
+    `);
+    if (data) {
+      rows = data as unknown as GenRow[];
+    }
+  } catch {
+    // Fall through to seed-only
+  }
+}
+
+const existingKeys = new Set(
+  rows.map((r) => `${r.models?.makes?.slug}/${r.models?.slug}/${r.slug}`)
+);
+const seed = await readSeed();
+let seedIdCounter = 100_000;
+for (const entry of seed) {
+  const key = `${entry.make}/${entry.model}/${entry.gen}`;
+  if (!existingKeys.has(key)) {
+    rows.push(seedToRow(entry, seedIdCounter));
+    seedIdCounter += 100;
+  }
+}
+
+// Sort by (make name, model name, year_start)
+function displayName(x: { name_es: string; name_en: string }): string {
+  return lang === "es" ? x.name_es : x.name_en;
+}
+rows.sort((a, b) => {
+  const byMake = displayName(a.models.makes).localeCompare(displayName(b.models.makes));
+  if (byMake !== 0) return byMake;
+  const byModel = displayName(a.models).localeCompare(displayName(b.models));
+  if (byModel !== 0) return byModel;
+  return a.year_start - b.year_start;
+});
+
+const path = `/${lang}/models/`;
+const title = tr("models.index.title");
+const description = tr("models.index.description");
+---
+
+<BaseLayout title={title} description={description} locale={lang} path={path}>
+  <HomeNav locale={lang} />
+
+  <main class="mx-auto max-w-6xl px-4 pb-16">
+    <nav aria-label="breadcrumb" class="py-4 text-sm text-[var(--color-muted)]">
+      <ol class="flex flex-wrap items-center gap-1">
+        <li>
+          <a
+            href={`/${lang}/`}
+            class="hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+          >
+            {tr("nav.home")}
+          </a>
+        </li>
+        <li aria-hidden="true">›</li>
+        <li><span aria-current="page">{tr("nav.models")}</span></li>
+      </ol>
+    </nav>
+
+    <h1 class="mb-2 text-3xl font-bold">{tr("models.index.heading")}</h1>
+    <p class="mb-8 max-w-2xl text-[var(--color-muted)]">{description}</p>
+
+    {
+      rows.length === 0 ? (
+        <p class="mt-6 text-sm text-[var(--color-muted)]">{tr("models.index.empty")}</p>
+      ) : (
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {rows.map((g) => (
+            <FeaturedModelCard
+              makeSlug={g.models.makes.slug}
+              modelSlug={g.models.slug}
+              genSlug={g.slug}
+              makeName={displayName(g.models.makes)}
+              modelName={displayName(g.models)}
+              genName={displayName(g)}
+              yearStart={g.year_start}
+              yearEnd={g.year_end}
+              chassisCode={g.chassis_code}
+              locale={lang}
+            />
+          ))}
+        </div>
+      )
+    }
+  </main>
+
+  <HomeFooter locale={lang} />
+</BaseLayout>
