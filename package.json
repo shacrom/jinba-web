@@ -21,7 +21,9 @@
     "types:sync": "tsx scripts/sync-db-types.ts",
     "i18n:check": "tsx scripts/check-i18n-parity.ts",
     "search:sync": "tsx scripts/sync-search-index.ts",
-    "lh": "lhci autorun"
+    "lh": "lhci autorun",
+    "seed:prices": "tsx scripts/seed-price-aggregates.ts",
+    "seed:prices:dry": "tsx scripts/seed-price-aggregates.ts --dry-run"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.3",
