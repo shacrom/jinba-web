@@ -20,6 +20,10 @@ export const PublicEnv = z.object({
 export const ServerEnv = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   JINBA_DB_PATH: z.string().optional(),
+  // Price-ingestion vars (B03 — data-sources-strategy). Optional so build
+  // passes without them set; handler returns 503 when absent at request time.
+  CRON_SECRET: z.string().min(1).optional(),
+  APIFY_TOKEN: z.string().min(1).optional(),
 });
 
 export type PublicEnvT = z.infer<typeof PublicEnv>;
