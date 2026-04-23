@@ -82,7 +82,7 @@ describe("buildModelDocs", () => {
     expect(docs).toHaveLength(2);
     const es = docs.find((d) => d.locale === "es");
     expect(es).toBeDefined();
-    expect(es?.objectID).toBe("model:mazda/mx-5/na:es");
+    expect(es?.objectID).toBe("model_mazda_mx-5_na_es");
     expect(es?.title).toContain("Ficha"); // overview title wins
     expect(es?.url).toBe("/es/mazda/mx-5/na/");
     expect(es?.tags).toEqual(["mazda", "mx-5", "na"]);
@@ -101,7 +101,7 @@ describe("buildGuideDocs", () => {
     const docs = buildGuideDocs([{ path: "/mx5-na-inspection.es.mdx", content: GUIDE_ES }]);
     expect(docs).toHaveLength(1);
     const d = docs[0];
-    expect(d.objectID).toBe("guide:mx5-na-inspection:es");
+    expect(d.objectID).toBe("guide_mx5-na-inspection_es");
     expect(d.type).toBe("guide");
     expect(d.url).toBe("/es/guides/mx5-na-inspection/");
     expect(d.tags).toEqual(["mx-5", "inspección"]);
@@ -115,7 +115,7 @@ describe("buildServiceDocs", () => {
     ]);
     expect(docs).toHaveLength(1);
     const d = docs[0];
-    expect(d.objectID).toBe("service:taller-madrid-classics:es");
+    expect(d.objectID).toBe("service_taller-madrid-classics_es");
     expect(d.type).toBe("service");
     expect(d.serviceType).toBe("workshop");
     expect(d.region).toBe("madrid");

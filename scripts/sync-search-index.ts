@@ -136,7 +136,7 @@ export function buildModelDocs(files: { path: string; content: string }[]): Sear
   const docs: SearchDoc[] = [];
   for (const [, { title, description, meta }] of byKey) {
     docs.push({
-      objectID: `model:${meta.make}/${meta.model}/${meta.generation}:${meta.locale}`,
+      objectID: `model_${meta.make}_${meta.model}_${meta.generation}_${meta.locale}`,
       type: "model",
       locale: meta.locale,
       title,
@@ -161,7 +161,7 @@ export function buildGuideDocs(files: { path: string; content: string }[]): Sear
     const base = file.path.split("/").pop() ?? "";
     const slug = base.replace(/\.(es|en)\.mdx$/, "");
     docs.push({
-      objectID: `guide:${slug}:${parsed.data.locale}`,
+      objectID: `guide_${slug}_${parsed.data.locale}`,
       type: "guide",
       locale: parsed.data.locale,
       title: parsed.data.title,
@@ -182,7 +182,7 @@ export function buildServiceDocs(files: { path: string; content: string }[]): Se
     const base = file.path.split("/").pop() ?? "";
     const slug = base.replace(/\.(es|en)\.mdx$/, "");
     docs.push({
-      objectID: `service:${slug}:${parsed.data.locale}`,
+      objectID: `service_${slug}_${parsed.data.locale}`,
       type: "service",
       locale: parsed.data.locale,
       title: parsed.data.name,
