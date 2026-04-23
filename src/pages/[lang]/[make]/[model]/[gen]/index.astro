@@ -61,6 +61,23 @@ interface SeedEntry {
   make: string;
   model: string;
   gen: string;
+  // Optional rich fields — when present, override the generic fallback defaults.
+  make_name_es?: string;
+  make_name_en?: string;
+  model_name_es?: string;
+  model_name_en?: string;
+  gen_name_es?: string;
+  gen_name_en?: string;
+  chassis_code?: string;
+  year_start?: number;
+  year_end?: number;
+  trims?: Array<{
+    slug: string;
+    name_es: string;
+    name_en: string;
+    power_hp: number | null;
+    engine_code: string | null;
+  }>;
 }
 
 // ── getStaticPaths ─────────────────────────────────────────────────────────
@@ -81,6 +98,38 @@ export async function getStaticPaths() {
     }
   }
 
+  function seedEntryToGenTaxonomy(entry: SeedEntry, idBase: number): GenTaxonomy {
+    return {
+      id: idBase,
+      slug: entry.gen,
+      name_es: entry.gen_name_es ?? entry.gen.toUpperCase(),
+      name_en: entry.gen_name_en ?? entry.gen.toUpperCase(),
+      year_start: entry.year_start ?? 1980,
+      year_end: entry.year_end ?? null,
+      chassis_code: entry.chassis_code ?? null,
+      models: {
+        id: idBase + 1,
+        slug: entry.model,
+        name_es: entry.model_name_es ?? entry.model,
+        name_en: entry.model_name_en ?? entry.model,
+        makes: {
+          id: idBase + 2,
+          slug: entry.make,
+          name_es: entry.make_name_es ?? entry.make,
+          name_en: entry.make_name_en ?? entry.make,
+        },
+      },
+      trims: (entry.trims ?? []).map((t, i) => ({
+        id: idBase + 10 + i,
+        slug: t.slug,
+        name_es: t.name_es,
+        name_en: t.name_en,
+        power_hp: t.power_hp,
+        engine_code: t.engine_code,
+      })),
+    };
+  }
+
   function buildFallbackPaths(
     seed: SeedEntry[]
   ): Array<{ params: Record<string, string>; props: { g: GenTaxonomy; lang: Locale } }> {
@@ -90,28 +139,8 @@ export async function getStaticPaths() {
     }> = [];
     let idCounter = 1;
     for (const entry of seed) {
-      const g: GenTaxonomy = {
-        id: idCounter++,
-        slug: entry.gen,
-        name_es: entry.gen.toUpperCase(),
-        name_en: entry.gen.toUpperCase(),
-        year_start: 1980,
-        year_end: null,
-        chassis_code: null,
-        models: {
-          id: idCounter++,
-          slug: entry.model,
-          name_es: entry.model,
-          name_en: entry.model,
-          makes: {
-            id: idCounter++,
-            slug: entry.make,
-            name_es: entry.make,
-            name_en: entry.make,
-          },
-        },
-        trims: [],
-      };
+      const g = seedEntryToGenTaxonomy(entry, idCounter);
+      idCounter += 100;
       for (const lang of ["es", "en"] as Locale[]) {
         paths.push({
           params: { lang, make: entry.make, model: entry.model, gen: entry.gen },
@@ -144,6 +173,22 @@ export async function getStaticPaths() {
   }
 
   if (rows.length > 0) {
+    // Merge seed entries that are NOT already represented in Supabase rows.
+    // This lets taxonomy-seed.json act as a supplement to the DB — useful for
+    // content-only additions that don't require a DB write.
+    const existingKeys = new Set(
+      rows.map((r) => `${r.models?.makes?.slug}/${r.models?.slug}/${r.slug}`)
+    );
+    const seed = readSeed();
+    let seedIdCounter = 100_000; // offset to avoid collisions with DB ids
+    for (const entry of seed) {
+      const key = `${entry.make}/${entry.model}/${entry.gen}`;
+      if (!existingKeys.has(key)) {
+        rows.push(seedEntryToGenTaxonomy(entry, seedIdCounter));
+        seedIdCounter += 100;
+      }
+    }
+
     const paths: Array<{
       params: Record<string, string>;
       props: { g: GenTaxonomy; lang: Locale };
