@@ -214,6 +214,7 @@ export const en: Dict = DictSchema.parse({
   "search.heading": "Search",
   "search.input.label": "What are you looking for",
   "search.input.placeholder": "e.g. mazda mx-5, madrid, inspection…",
+  "search.input.clear": "Clear search",
   "search.results.heading": "Results",
   "search.results.empty": "No results for your query.",
   "search.results.hint":

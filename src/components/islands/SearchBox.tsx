@@ -13,6 +13,7 @@ interface SearchBoxProps {
   labels: {
     inputLabel: string;
     placeholder: string;
+    clearLabel: string;
     resultsHeading: string;
     empty: string;
     hint: string;
@@ -102,15 +103,35 @@ export default function SearchBox({ locale, labels }: SearchBoxProps) {
         <span className="mb-2 block text-sm font-medium text-[var(--color-fg)]">
           {labels.inputLabel}
         </span>
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.currentTarget.value)}
-          placeholder={labels.placeholder}
-          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 text-base text-[var(--color-fg)] focus:border-[var(--color-accent)] focus:outline-2 focus:outline-[var(--color-ring)]"
-          autoComplete="off"
-          aria-describedby="search-results"
-        />
+        <span className="relative block">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.currentTarget.value)}
+            placeholder={labels.placeholder}
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 pr-12 text-base text-[var(--color-fg)] focus:border-[var(--color-accent)] focus:outline-2 focus:outline-[var(--color-ring)]"
+            autoComplete="off"
+            aria-describedby="search-results"
+          />
+          {query.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label={labels.clearLabel}
+              className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-[var(--color-muted)] hover:text-[var(--color-fg)] focus:outline-2 focus:outline-[var(--color-ring)]"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-5 w-5"
+                aria-hidden="true"
+              >
+                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+              </svg>
+            </button>
+          )}
+        </span>
       </label>
 
       <section

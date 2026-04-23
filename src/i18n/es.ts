@@ -203,6 +203,7 @@ export const DictSchema = z.object({
   "search.heading": z.string(),
   "search.input.label": z.string(),
   "search.input.placeholder": z.string(),
+  "search.input.clear": z.string(),
   "search.results.heading": z.string(),
   "search.results.empty": z.string(),
   "search.results.hint": z.string(),
@@ -431,6 +432,7 @@ export const es = DictSchema.parse({
   "search.heading": "Buscar",
   "search.input.label": "Qué buscas",
   "search.input.placeholder": "Ej: mazda mx-5, madrid, inspección…",
+  "search.input.clear": "Limpiar búsqueda",
   "search.results.heading": "Resultados",
   "search.results.empty": "No encontramos resultados para tu búsqueda.",
   "search.results.hint":
