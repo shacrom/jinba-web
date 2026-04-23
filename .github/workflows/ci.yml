@@ -36,11 +36,22 @@ jobs:
       - name: TypeScript typecheck
         run: npm run typecheck
 
+      - name: Checkout jinba-db (for types drift check)
+        uses: actions/checkout@v4
+        with:
+          repository: shacrom/jinba-db
+          path: .jinba-db
+          # Public repo expected — no token needed. If jinba-db is private,
+          # set JINBA_DB_READ_TOKEN as a repo secret and add `token: ${{ secrets.JINBA_DB_READ_TOKEN }}`.
+          fetch-depth: 1
+        continue-on-error: true
+
       - name: jinba-db types drift check
-        # Snapshot the committed types, run the sync script, and fail if the
-        # committed file no longer matches the schema in jinba-db.
-        # If JINBA_DB_PATH is not wired in CI yet, the script is a no-op and
-        # this step is effectively a diff of the file against itself.
+        # Sync types from the sibling checkout (or fall back to a local shim if
+        # the checkout step above was skipped, kept continue-on-error so that
+        # the CI still runs if jinba-db becomes unavailable).
+        env:
+          JINBA_DB_PATH: ${{ github.workspace }}/.jinba-db/types/database.ts
         run: |
           cp src/types/database.ts /tmp/jinba-db-types-before.ts
           npm run types:sync || true
