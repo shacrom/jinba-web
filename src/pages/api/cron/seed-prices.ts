@@ -1,14 +1,17 @@
+import { seedNichePrices } from "@/lib/ingest/seed";
+/**
+ * src/pages/api/cron/seed-prices.ts — E02 (data-sources-strategy)
+ *
+ * Monthly Vercel cron endpoint (0 3 1 * * per vercel.json).
+ * Delegates entirely to seedNichePrices() from src/lib/ingest/seed.ts.
+ *
+ * Auth: same CRON_SECRET bearer check as sync-prices.ts.
+ * Returns: 200 JSON SeedResult on success; 401 on auth failure.
+ */
 import type { APIRoute } from "astro";
 
-/**
- * /api/cron/seed-prices — stub until Batch 2 lands (data-sources-strategy).
- *
- * Vercel cron invokes this monthly per `vercel.json`. The real implementation
- * re-seeds the 5 niche generations (MX-5 NA, 240Z S30, León Mk1, Golf Mk4,
- * A3 8P) from `data/seed-prices.csv` into `ingested_price_points` with
- * `source = 'seed'`. Blocked on jinba-db migration + `types:sync`.
- */
 export const prerender = false;
+export const config = { runtime: "nodejs" };
 
 function unauthorized(): Response {
   return new Response(JSON.stringify({ error: "unauthorized" }), {
@@ -17,36 +20,25 @@ function unauthorized(): Response {
   });
 }
 
-function notReady(): Response {
-  return new Response(
-    JSON.stringify({
-      status: "not_ready",
-      reason: "seed pipeline awaiting jinba-db migration",
-    }),
-    {
-      status: 503,
-      headers: {
-        "content-type": "application/json; charset=utf-8",
-        "cache-control": "no-store",
-      },
-    }
-  );
-}
-
-function authorized(request: Request): boolean {
-  const expected = process.env.CRON_SECRET;
-  if (!expected) return false;
-  const header = request.headers.get("authorization") ?? "";
-  const provided = header.replace(/^Bearer\s+/i, "");
-  return provided === expected;
-}
-
 export const GET: APIRoute = async ({ request }) => {
-  if (!authorized(request)) return unauthorized();
-  return notReady();
+  const CRON_SECRET = process.env.CRON_SECRET;
+  const auth = request.headers.get("authorization");
+
+  if (!CRON_SECRET || auth !== `Bearer ${CRON_SECRET}`) {
+    return unauthorized();
+  }
+
+  const result = await seedNichePrices({ dryRun: false });
+
+  return new Response(JSON.stringify(result), {
+    status: 200,
+    headers: { "content-type": "application/json; charset=utf-8" },
+  });
 };
 
-export const POST: APIRoute = async ({ request }) => {
-  if (!authorized(request)) return unauthorized();
-  return notReady();
-};
+// Block all other methods
+const methodNotAllowed: APIRoute = async () => new Response("method not allowed", { status: 405 });
+export const POST = methodNotAllowed;
+export const PUT = methodNotAllowed;
+export const DELETE = methodNotAllowed;
+export const PATCH = methodNotAllowed;

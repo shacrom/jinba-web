@@ -60,6 +60,79 @@ export type Database = {
           },
         ]
       }
+      ingested_price_points: {
+        Row: {
+          created_at: string
+          currency: string
+          external_id: string
+          gen_slug: string
+          generation_id: number
+          id: number
+          ingest_run_id: string
+          km: number | null
+          make_id: number
+          model_id: number
+          observed_at: string
+          price: number
+          source_slug: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          external_id: string
+          gen_slug: string
+          generation_id: number
+          id?: never
+          ingest_run_id: string
+          km?: number | null
+          make_id: number
+          model_id: number
+          observed_at: string
+          price: number
+          source_slug: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          external_id?: string
+          gen_slug?: string
+          generation_id?: number
+          id?: never
+          ingest_run_id?: string
+          km?: number | null
+          make_id?: number
+          model_id?: number
+          observed_at?: string
+          price?: number
+          source_slug?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingested_price_points_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "generations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingested_price_points_make_id_fkey"
+            columns: ["make_id"]
+            isOneToOne: false
+            referencedRelation: "makes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingested_price_points_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_photos: {
         Row: {
           checksum: string | null
@@ -660,29 +733,7 @@ export type Database = {
           p75: number | null
           year_bucket: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "listings_generation_id_fkey"
-            columns: ["generation_id"]
-            isOneToOne: false
-            referencedRelation: "generations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "listings_make_id_fkey"
-            columns: ["make_id"]
-            isOneToOne: false
-            referencedRelation: "makes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "listings_model_id_fkey"
-            columns: ["model_id"]
-            isOneToOne: false
-            referencedRelation: "models"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       sources_public: {
         Row: {
