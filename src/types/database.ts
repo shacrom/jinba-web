@@ -761,6 +761,7 @@ export type Database = {
       }
     }
     Functions: {
+      get_median_km_per_year: { Args: { gen_id: number }; Returns: number }
       refresh_price_aggregates_daily: { Args: never; Returns: undefined }
     }
     Enums: {
