@@ -195,6 +195,26 @@ npm run test:e2e
 
 ---
 
+## Price ingestion cron
+
+Price data for the fair-value calculator is sourced via [Apify](https://apify.com) paid scraping actors (Milanuncios + Wallapop). A Vercel cron endpoint pulls actor output every 6 hours, normalises it, and upserts it into the `ingested_price_points` staging table. A Postgres function (`refresh_price_aggregates_daily`) then rebuilds the `price_aggregates_daily` materialized view so all price surfaces (calculator, chart, LivePriceStats) pick up fresh data automatically.
+
+| Variable | Required | Description |
+|---|---|---|
+| `APIFY_TOKEN` | Yes (for cron) | Apify API token. Server-only. Never expose in browser. |
+| `APIFY_DATASET_MIL` | Yes (for cron) | Apify dataset ID for the Milanuncios actor run. |
+| `APIFY_DATASET_WAL` | Yes (for cron) | Apify dataset ID for the Wallapop actor run. |
+| `CRON_SECRET` | Yes (for cron) | Shared secret injected by Vercel cron. Generate with `openssl rand -hex 32`. |
+| `ALERT_WEBHOOK_URL` | No | POST receives `{event, timestamp}` JSON on 0-row runs. |
+
+### Cost monitoring
+
+An Apify billing alert MUST be configured at **$80/month** (80% of the $100 cap) via the Apify dashboard → Billing → Alerts. This is a manual dashboard step, not a code change.
+
+The `GET /api/cron/sync-prices` endpoint is auth-gated via `CRON_SECRET`. Vercel cron invocations inject `Authorization: Bearer <CRON_SECRET>` automatically. Do not invoke the endpoint manually except via the Vercel dashboard "Run now" button.
+
+---
+
 ## Admin preview (`/admin/scraping/`)
 
 The internal scraper dashboard at `/admin/scraping/?token=…` is unauthenticated but gated by a shared secret token. It is **not** linked from the public site and is excluded from the sitemap (`/admin/` is in `robots.txt` + `sitemap.filter`).
