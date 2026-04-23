@@ -84,6 +84,33 @@ describe("kmModifier", () => {
     const expected = MEDIAN_KM_PER_YEAR * Math.max(1, now - 2020);
     expect(kmModifier(expected, 2020)).toBe(0);
   });
+
+  // M5 N-03 — per-generation median km/year override
+  it("honours a per-gen medianKmPerYear override (lower baseline)", () => {
+    // Classic car typical use: 3000 km/year. A 50-year-old car with
+    // 150000 km matches expected (3000 × 50 = 150000) → modifier = 0.
+    expect(kmModifier(150_000, 1976, 2026, 3000)).toBe(0);
+  });
+
+  it("honours a per-gen medianKmPerYear override (higher baseline)", () => {
+    // Daily-driver gen: 20000 km/year. 5-year-old with 100000 km → modifier 0.
+    expect(kmModifier(100_000, 2021, 2026, 20_000)).toBe(0);
+  });
+
+  it("scales the delta with the overridden baseline", () => {
+    // medianKmPerYear=5000, year=2010, current=2026 → age=16, expected=80000.
+    // km=160000 → delta=80000 → ratio=16 → raw=-0.48 → clamp to -0.25.
+    expect(kmModifier(160_000, 2010, 2026, 5000)).toBe(-0.25);
+    // km=40000 → delta=-40000 → ratio=-8 → raw=+0.24 (within clamp).
+    expect(kmModifier(40_000, 2010, 2026, 5000)).toBeCloseTo(0.24, 5);
+  });
+
+  it("falls back to MEDIAN_KM_PER_YEAR when override is omitted", () => {
+    // Same call without and with explicit default must match.
+    const a = kmModifier(180_000, 2020, 2026);
+    const b = kmModifier(180_000, 2020, 2026, MEDIAN_KM_PER_YEAR);
+    expect(a).toBeCloseTo(b, 10);
+  });
 });
 
 describe("conditionModifier", () => {
@@ -163,5 +190,38 @@ describe("computeEstimate", () => {
       windowDays: 90,
     });
     expect(res).toBeNull();
+  });
+
+  // M5 N-03 — threads medianKmPerYear through to kmModifier
+  it("threads per-gen medianKmPerYear through to kmModifier", () => {
+    const rows: MVRow[] = [{ count: 5, median: 8_500 }];
+    // Mazda MX-5 NA 1994, 150000 km, baseline 4500 km/year (niche).
+    // age=2026-1994=32, expected=4500*32=144000, km=150000 → delta=6000
+    // ratio=6000/4500=1.333.., raw=-0.04 (within clamp)
+    const resNiche = computeEstimate({
+      rows,
+      km: 150_000,
+      year: 1994,
+      condition: "good",
+      windowDays: 90,
+      currentYear: 2026,
+      medianKmPerYear: 4500,
+    });
+    // Baseline default (15000 km/year) would give a drastically different
+    // km_mod because expected=480000 vs 150000 → delta=-330000, ratio≈-22
+    // → clamp to +0.25. The override prevents that distortion.
+    const resDefault = computeEstimate({
+      rows,
+      km: 150_000,
+      year: 1994,
+      condition: "good",
+      windowDays: 90,
+      currentYear: 2026,
+      // no medianKmPerYear override
+    });
+    if (!resNiche || !resDefault) throw new Error("expected non-null estimates");
+    // With the niche baseline we sit essentially at the median; with the
+    // default baseline we clamp to the maximum low-km bonus.
+    expect(Math.abs(resNiche.estimate_eur - 8500)).toBeLessThan(resDefault.estimate_eur - 8500);
   });
 });

@@ -1,3 +1,4 @@
+import { resolveMedianKmPerYear } from "@/lib/km-median";
 import { type MVRow, computeEstimate } from "@/lib/price-estimate";
 import { PriceEstimateRequest, type PriceEstimateResponse } from "@/lib/price-estimate-types";
 import { supabase } from "@/lib/supabase";
@@ -105,13 +106,18 @@ export const POST: APIRoute = async ({ request }) => {
       median: r.median ?? 0,
     }));
 
-    // 6. Delegate to pure math
+    // 6. Resolve per-generation median km/year (M5 N-03).
+    //    Falls back to the product-wide baseline on any failure.
+    const medianKmPerYear = await resolveMedianKmPerYear(g.id, supabase);
+
+    // 7. Delegate to pure math
     const result = computeEstimate({
       rows: mvRows,
       km,
       year,
       condition,
       windowDays: WINDOW_DAYS,
+      medianKmPerYear,
     });
     if (!result) {
       return json<PriceEstimateResponse>(200, { available: false });

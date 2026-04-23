@@ -42,24 +42,33 @@ export function weightedMedian(rows: MVRow[]): number | null {
   return Math.round(sum / rows.length);
 }
 
-/** Assumed average yearly mileage — used by `kmModifier`. */
+/**
+ * Product-wide baseline for km/year. Used when a generation has too few
+ * observations to derive a per-gen median (M5 N-03 fallback) and as the
+ * default argument in unit tests.
+ */
 export const MEDIAN_KM_PER_YEAR = 15_000;
 
 /**
  * km modifier: pushes the baseline down for high-km cars and up for low-km
  * cars, bounded to ±0.25 so extreme inputs can't nuke or double the price.
  * REQ-CALC-MATH-02.
+ *
+ * `medianKmPerYear` is the per-generation expected annual mileage (M5 N-03).
+ * Falls back to the product-wide constant when the caller doesn't supply
+ * one — keeps the pure-math module independent of DB access.
  */
 export function kmModifier(
   km: number,
   year: number,
-  currentYear: number = new Date().getUTCFullYear()
+  currentYear: number = new Date().getUTCFullYear(),
+  medianKmPerYear: number = MEDIAN_KM_PER_YEAR
 ): number {
   const age = Math.max(1, currentYear - year);
-  const expected = MEDIAN_KM_PER_YEAR * age;
+  const expected = medianKmPerYear * age;
   const delta = km - expected;
   if (delta === 0) return 0; // avoid `-0` (Object.is(-0, 0) === false)
-  const ratio = delta / MEDIAN_KM_PER_YEAR;
+  const ratio = delta / medianKmPerYear;
   const raw = -0.03 * ratio;
   return Math.max(-0.25, Math.min(0.25, raw));
 }
@@ -83,6 +92,8 @@ export interface ComputeEstimateInput {
   condition: Condition;
   windowDays: number;
   currentYear?: number;
+  /** Per-generation median km/year (M5 N-03). Defaults to `MEDIAN_KM_PER_YEAR`. */
+  medianKmPerYear?: number;
 }
 
 export interface ComputeEstimateResult {
@@ -100,7 +111,7 @@ export function computeEstimate(input: ComputeEstimateInput): ComputeEstimateRes
   const baseline = weightedMedian(input.rows);
   if (baseline === null || baseline <= 0) return null;
 
-  const km = kmModifier(input.km, input.year, input.currentYear);
+  const km = kmModifier(input.km, input.year, input.currentYear, input.medianKmPerYear);
   const cond = conditionModifier(input.condition);
   const adjusted = baseline * (1 + km) * (1 + cond);
 
