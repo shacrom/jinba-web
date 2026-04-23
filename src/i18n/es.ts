@@ -195,6 +195,24 @@ export const DictSchema = z.object({
   "services.detail.phone": z.string(),
   "services.detail.website": z.string(),
   "services.detail.backToIndex": z.string(),
+
+  // ── search (M9 — 16 new keys) ──
+  "nav.search": z.string(),
+  "search.pageTitle": z.string(),
+  "search.pageDescription": z.string(),
+  "search.heading": z.string(),
+  "search.input.label": z.string(),
+  "search.input.placeholder": z.string(),
+  "search.results.heading": z.string(),
+  "search.results.empty": z.string(),
+  "search.results.hint": z.string(),
+  "search.group.models": z.string(),
+  "search.group.guides": z.string(),
+  "search.group.services": z.string(),
+  "search.type.badge.model": z.string(),
+  "search.type.badge.guide": z.string(),
+  "search.type.badge.service": z.string(),
+  "search.unavailable": z.string(),
 });
 
 export type Dict = z.infer<typeof DictSchema>;
@@ -405,4 +423,23 @@ export const es = DictSchema.parse({
   "services.detail.phone": "Teléfono",
   "services.detail.website": "Sitio web",
   "services.detail.backToIndex": "Volver al directorio",
+
+  // ── search (M9) ──
+  "nav.search": "Buscar",
+  "search.pageTitle": "Buscar en Jinba | Fichas, guías y talleres",
+  "search.pageDescription": "Busca modelos, guías editoriales y talleres recomendados en Jinba.",
+  "search.heading": "Buscar",
+  "search.input.label": "Qué buscas",
+  "search.input.placeholder": "Ej: mazda mx-5, madrid, inspección…",
+  "search.results.heading": "Resultados",
+  "search.results.empty": "No encontramos resultados para tu búsqueda.",
+  "search.results.hint":
+    "Prueba con una marca, un taller o un tema editorial. Ej: «mazda», «madrid», «inspección».",
+  "search.group.models": "Modelos",
+  "search.group.guides": "Guías",
+  "search.group.services": "Talleres y servicios",
+  "search.type.badge.model": "Ficha",
+  "search.type.badge.guide": "Guía",
+  "search.type.badge.service": "Servicio",
+  "search.unavailable": "La búsqueda aún no está disponible. Configura Meilisearch para activarla.",
 });

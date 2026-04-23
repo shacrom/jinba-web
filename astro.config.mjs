@@ -24,7 +24,7 @@ export default defineConfig({
         defaultLocale: "es",
         locales: { es: "es-ES", en: "en-US" },
       },
-      filter: (p) => !p.includes("/admin/"),
+      filter: (p) => !p.includes("/admin/") && !p.includes("/search/"),
     }),
   ],
   i18n: {

@@ -47,6 +47,12 @@ const tr = t(locale);
         {tr("listings.breadcrumb.listings")}
       </a>
       <a
+        href={`/${locale}/search/`}
+        class="text-[var(--color-muted)] transition-colors hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+      >
+        {tr("nav.search")}
+      </a>
+      <a
         href={`/${locale}/calculator/`}
         class="text-[var(--color-muted)] transition-colors hover:text-[var(--color-fg)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
       >

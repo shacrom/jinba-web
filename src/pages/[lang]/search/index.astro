@@ -1,0 +1,47 @@
+---
+import HomeNav from "@/components/home/HomeNav.astro";
+import SearchBox from "@/components/islands/SearchBox.tsx";
+import { LOCALES, type Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params as { lang: Locale };
+const tr = t(lang);
+---
+
+<BaseLayout
+  title={tr("search.pageTitle")}
+  description={tr("search.pageDescription")}
+  locale={lang}
+  path={`/${lang}/search/`}
+  noindex
+>
+  <HomeNav locale={lang} />
+  <main class="mx-auto max-w-3xl px-6 py-12">
+    <h1 class="mb-8 text-3xl font-semibold tracking-tight text-[var(--color-fg)]">
+      {tr("search.heading")}
+    </h1>
+    <SearchBox
+      client:load
+      locale={lang}
+      labels={{
+        inputLabel: tr("search.input.label"),
+        placeholder: tr("search.input.placeholder"),
+        resultsHeading: tr("search.results.heading"),
+        empty: tr("search.results.empty"),
+        hint: tr("search.results.hint"),
+        unavailable: tr("search.unavailable"),
+        groupModels: tr("search.group.models"),
+        groupGuides: tr("search.group.guides"),
+        groupServices: tr("search.group.services"),
+        badgeModel: tr("search.type.badge.model"),
+        badgeGuide: tr("search.type.badge.guide"),
+        badgeService: tr("search.type.badge.service"),
+      }}
+    />
+  </main>
+</BaseLayout>

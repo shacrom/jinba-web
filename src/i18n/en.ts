@@ -206,6 +206,25 @@ export const en: Dict = DictSchema.parse({
   "services.detail.phone": "Phone",
   "services.detail.website": "Website",
   "services.detail.backToIndex": "Back to the directory",
+
+  // ── search (M9) ──
+  "nav.search": "Search",
+  "search.pageTitle": "Search Jinba | Models, guides & workshops",
+  "search.pageDescription": "Search models, editorial guides, and trusted workshops on Jinba.",
+  "search.heading": "Search",
+  "search.input.label": "What are you looking for",
+  "search.input.placeholder": "e.g. mazda mx-5, madrid, inspection…",
+  "search.results.heading": "Results",
+  "search.results.empty": "No results for your query.",
+  "search.results.hint":
+    'Try a make, a workshop, or an editorial topic. e.g. "mazda", "madrid", "inspection".',
+  "search.group.models": "Models",
+  "search.group.guides": "Guides",
+  "search.group.services": "Shops & services",
+  "search.type.badge.model": "Model",
+  "search.type.badge.guide": "Guide",
+  "search.type.badge.service": "Service",
+  "search.unavailable": "Search is not yet available. Configure Meilisearch to enable it.",
 });
 
 const DICTS = { es, en } as const satisfies Record<Locale, Dict>;

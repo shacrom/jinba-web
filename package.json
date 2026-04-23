@@ -20,6 +20,7 @@
     "test:e2e": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 playwright test",
     "types:sync": "tsx scripts/sync-db-types.ts",
     "i18n:check": "tsx scripts/check-i18n-parity.ts",
+    "search:sync": "tsx scripts/sync-search-index.ts",
     "lh": "lhci autorun"
   },
   "dependencies": {
