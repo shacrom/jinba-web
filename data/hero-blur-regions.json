@@ -1,0 +1,111 @@
+{
+  "_meta": {
+    "description": "Privacy blur registry. Coordinates use fractions (0-1) of the final image dimensions so they survive aspect-ratio changes and re-downloads. scripts/privacy-blur.ts re-downloads the original from source_url every run, resizes to hero_max_width, applies blur, and writes hero.jpg + thumb.jpg in one pass.",
+    "blur_sigma": 32,
+    "hero_max_width": 1600,
+    "thumb_max_width": 640
+  },
+  "entries": {
+    "mazda:mx-5:na": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/95/Mazda_Roadster_%28MX-5%29_by_Negawa_Bridge_%28cropped%29.jpg",
+      "regions": []
+    },
+    "datsun:240z:s30": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/64/1970-1973_Nissan_Fairlady_Z.jpg",
+      "regions": [
+        {
+          "x": 0.08,
+          "y": 0.55,
+          "w": 0.17,
+          "h": 0.13,
+          "reason": "front plate area (blank but safety)"
+        }
+      ]
+    },
+    "seat:leon:mk1": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Seat_Leon_1M_FR.JPG",
+      "regions": []
+    },
+    "seat:leon:mk2": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/6e/SEAT_Leon_1P_upper_view.jpg",
+      "regions": [{ "x": 0.2, "y": 0.73, "w": 0.3, "h": 0.15, "reason": "plate (aerial view)" }]
+    },
+    "seat:ibiza:mk4": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a9/SEAT_Ibiza_6J_Cupra.jpg",
+      "regions": [
+        {
+          "x": 0.18,
+          "y": 0.05,
+          "w": 0.8,
+          "h": 0.25,
+          "reason": "faces — auto show crowd entire upper strip"
+        }
+      ]
+    },
+    "volkswagen:golf:mk4": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c2/Golf4_1.4.jpg",
+      "regions": [{ "x": 0.0, "y": 0.58, "w": 0.25, "h": 0.15, "reason": "German front plate" }]
+    },
+    "volkswagen:polo:mk5": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c1/2010-2011_Volkswagen_Polo_%286R%29_77TSI_Comfortline_5-door_hatchback_%282011-11-18%29_01.jpg",
+      "regions": [{ "x": 0.76, "y": 0.63, "w": 0.21, "h": 0.15, "reason": "NSW plate BTS-56Y" }]
+    },
+    "audi:a3:8p": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Audi_A3_8P_Vorn.JPG",
+      "regions": [{ "x": 0.13, "y": 0.68, "w": 0.22, "h": 0.15, "reason": "front plate" }]
+    },
+    "audi:rs6:c7": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d2/Audi_RS6_%28C7%29_Avant_%2824418339396%29.jpg",
+      "regions": []
+    },
+    "renault:megane:mk3": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/bd/2010_Renault_Megane_%2814748393207%29.jpg",
+      "regions": [{ "x": 0.0, "y": 0.5, "w": 0.26, "h": 0.18, "reason": "Dutch plate 52-LSJ-5" }]
+    },
+    "renault:clio:mk4": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/33/2013_Renault_Clio_IV_Dynamique_%281%29.jpg",
+      "regions": [{ "x": 0.0, "y": 0.56, "w": 0.3, "h": 0.26, "reason": "plate NRB 42218" }]
+    },
+    "ford:focus:mk2": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/69/Ford_Focus_II_1.6_Ghia_4d_A_%28NGL-850%29_in_Haukilahti%2C_Espoo_%28September_2019%2C_7%29.jpg",
+      "regions": [{ "x": 0.66, "y": 0.45, "w": 0.27, "h": 0.22, "reason": "Finnish plate NGL-850" }]
+    },
+    "opel:astra:j": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c4/2010_Opel_Astra_J_%28netherlands%29.jpg",
+      "regions": [
+        {
+          "x": 0.05,
+          "y": 0.63,
+          "w": 0.25,
+          "h": 0.15,
+          "reason": "Dutch plate 83-LLT-8 (foreground car)"
+        }
+      ]
+    },
+    "peugeot:308:mk1": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/73/2008-2010_Peugeot_308_%28T7%29_XSE_Touring_%282015-11-06%29.jpg",
+      "regions": [
+        { "x": 0.0, "y": 0.72, "w": 0.24, "h": 0.15, "reason": "Australian plate 1DJY-241" }
+      ]
+    },
+    "bmw:serie-3:e90": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a2/2005-2008_BMW_320i_%28E90%29_sedan_%282011-07-17%29_01.jpg",
+      "regions": [{ "x": 0.77, "y": 0.57, "w": 0.19, "h": 0.22, "reason": "NSW plate MS-164" }]
+    },
+    "dacia:sandero:mk2": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/02/Dacia_Sandero_II_%2826078%29.jpg",
+      "regions": [
+        { "x": 0.0, "y": 0.18, "w": 0.38, "h": 0.2, "reason": "French rear plate CY-738-FK" }
+      ]
+    },
+    "kia:picanto:sa": {
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/38/2004-2007_Kia_Picanto_%28SA%29_EX_hatchback_%282015-12-31%29.jpg",
+      "regions": [
+        { "x": 0.02, "y": 0.68, "w": 0.28, "h": 0.14, "reason": "Vietnamese plate 29Z-1115" },
+        { "x": 0.12, "y": 0.0, "w": 0.15, "h": 0.15, "reason": "face — woman in pink" },
+        { "x": 0.0, "y": 0.18, "w": 0.09, "h": 0.15, "reason": "face — seated person bottom-left" },
+        { "x": 0.22, "y": 0.0, "w": 0.26, "h": 0.12, "reason": "background faces — market crowd" }
+      ]
+    }
+  }
+}

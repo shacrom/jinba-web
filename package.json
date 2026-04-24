@@ -23,7 +23,8 @@
     "search:sync": "tsx scripts/sync-search-index.ts",
     "lh": "lhci autorun",
     "seed:prices": "tsx scripts/seed-price-aggregates.ts",
-    "seed:prices:dry": "tsx scripts/seed-price-aggregates.ts --dry-run"
+    "seed:prices:dry": "tsx scripts/seed-price-aggregates.ts --dry-run",
+    "heroes:blur": "tsx scripts/privacy-blur.ts"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.3",
@@ -44,6 +45,7 @@
     "react-dom": "^19.0.0",
     "rehype-autolink-headings": "^7.0.0",
     "rehype-slug": "^6.0.0",
+    "sharp": "^0.34.5",
     "tailwind-merge": "^2.5.5",
     "tailwindcss": "^4.2.4",
     "tesseract.js": "^7.0.0",
