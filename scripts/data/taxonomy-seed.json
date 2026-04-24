@@ -158,5 +158,19 @@
     "chassis_code": "C7",
     "year_start": 2013,
     "year_end": 2018
+  },
+  {
+    "make": "kia",
+    "model": "picanto",
+    "gen": "sa",
+    "make_name_es": "KIA",
+    "make_name_en": "Kia",
+    "model_name_es": "Picanto",
+    "model_name_en": "Picanto",
+    "gen_name_es": "SA",
+    "gen_name_en": "SA",
+    "chassis_code": "SA",
+    "year_start": 2004,
+    "year_end": 2011
   }
 ]

@@ -177,6 +177,16 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
     credit: "Dacia Sandero II · Wikimedia Commons · CC BY-SA",
     source_url: "https://commons.wikimedia.org/wiki/File:Dacia_Sandero_II_(26078).jpg",
   },
+  "kia:picanto:sa": {
+    image: "/images/models/kia/picanto/sa/hero.jpg",
+    thumb: "/images/models/kia/picanto/sa/thumb.jpg",
+    width: 1600,
+    height: 900,
+    alt: "Kia Picanto SA EX hatchback",
+    credit: "2004-2007 Kia Picanto (SA) EX hatchback · Wikimedia Commons · CC BY-SA",
+    source_url:
+      "https://commons.wikimedia.org/wiki/File:2004-2007_Kia_Picanto_(SA)_EX_hatchback_(2015-12-31).jpg",
+  },
 };
 
 /**
