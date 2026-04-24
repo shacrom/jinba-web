@@ -1,4 +1,4 @@
-// AUTO-SYNCED from ../jinba-db/types/database.ts — do not edit by hand
+// AUTO-SYNCED from jinba-db — do not edit by hand
 // Run `npm run types:sync` to refresh.
 export type Json =
   | string

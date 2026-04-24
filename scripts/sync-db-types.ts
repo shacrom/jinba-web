@@ -26,9 +26,13 @@ for (const c of candidates) {
   }
 
   mkdirSync(dirname(target), { recursive: true });
+  // Header uses a stable reference ("jinba-db") rather than the resolved path
+  // so the committed file is identical across environments (local sync with
+  // JINBA_DB_PATH=../jinba-db vs CI sync with a clone under /home/runner/...).
+  // The CI drift check compares byte-for-byte, so any path variance fails it.
   writeFileSync(
     target,
-    `// AUTO-SYNCED from ${c} — do not edit by hand\n// Run \`npm run types:sync\` to refresh.\n${content}`
+    `// AUTO-SYNCED from jinba-db — do not edit by hand\n// Run \`npm run types:sync\` to refresh.\n${content}`
   );
   console.log(`types:sync OK — copied from ${abs}`);
   process.exit(0);
