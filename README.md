@@ -215,24 +215,21 @@ The `GET /api/cron/sync-prices` endpoint is auth-gated via `CRON_SECRET`. Vercel
 
 ---
 
-## Admin preview (`/admin/scraping/`)
+## Admin access (`/admin/scraping/`, `/admin/users`)
 
-The internal scraper dashboard at `/admin/scraping/?token=…` is unauthenticated but gated by a shared secret token. It is **not** linked from the public site and is excluded from the sitemap (`/admin/` is in `robots.txt` + `sitemap.filter`).
+Admin pages are gated by Supabase Auth session. A user must be logged in with a profile whose `role` is `admin`. Non-admins receive a 404. The pages are excluded from the sitemap (`/admin/` is in `robots.txt` + `sitemap.filter`) and carry `noindex,nofollow` meta.
 
-**Rotation (do this quarterly, or immediately after any suspected leak):**
+### First admin
 
-1. Generate a new token: `openssl rand -hex 24` (or any 32+ byte secret).
-2. Update the `ADMIN_PREVIEW_TOKEN` env var in Vercel (`Project → Settings → Environment Variables → Production`).
-3. Redeploy is **not** required — the value is read at request time via `process.env` (never inlined into the bundle). The next request picks up the new value.
-4. Distribute the new token out-of-band to whoever needs access. Invalidate the old one.
+After deploying and creating the first account, run this SQL via the Supabase SQL editor to promote the bootstrap admin:
 
-**Important caveats:**
+```sql
+UPDATE public.profiles
+SET role = 'admin'
+WHERE id = (SELECT id FROM auth.users WHERE email = 'marmibas.dev@gmail.com');
+```
 
-- The token travels in the query string. It appears in Vercel access logs, any upstream CDN logs, and the browser history of anyone with the link. Treat it like a short-lived bearer token, not a password.
-- If a token appears in a screen recording, screenshot, or public bug report, rotate immediately.
-- Do **not** hardcode the token in MDX, JSON, or committed files. It should only exist in Vercel env and in whatever password manager the team uses.
-
-F2 replaces this with a real auth gate (Supabase Auth session check); the token model is a stopgap.
+Subsequent admin promotions can be done via `/admin/users` by any existing admin.
 
 ---
 

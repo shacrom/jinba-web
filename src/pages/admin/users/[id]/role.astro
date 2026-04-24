@@ -1,0 +1,36 @@
+---
+/**
+ * src/pages/admin/users/[id]/role.astro — F2 Batch 6
+ * POST-only. Updates profile.role. Prevents self-demotion.
+ */
+export const prerender = false;
+
+import { requireAdmin } from "@/lib/auth";
+
+if (Astro.request.method !== "POST") {
+  return Astro.redirect("/admin/users");
+}
+
+const result = await requireAdmin(Astro);
+if (result instanceof Response) return result;
+const { user: currentUser } = result;
+
+const targetId = Astro.params.id as string;
+
+// Disallow self-demotion
+if (targetId === currentUser.id) {
+  return Astro.redirect("/admin/users");
+}
+
+// supabase is guaranteed by requireAuth having succeeded above
+// biome-ignore lint/style/noNonNullAssertion: requireAuth ensures supabase is defined
+const supabase = Astro.locals.supabase!;
+const form = await Astro.request.formData();
+const newRole = form.get("new_role") as string | null;
+
+if (newRole === "admin" || newRole === "user") {
+  await supabase.from("profiles").update({ role: newRole }).eq("id", targetId);
+}
+
+return Astro.redirect("/admin/users");
+---

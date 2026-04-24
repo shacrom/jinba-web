@@ -1,0 +1,108 @@
+---
+/**
+ * src/pages/admin/users.astro — F2 Batch 6
+ * Lists all profiles. Requires admin session (requireAdmin gate).
+ * Uses session-gated anon client — the profiles_admin_read_all policy allows
+ * is_admin() users to see all rows without service-role.
+ */
+export const prerender = false;
+
+import { adminT } from "@/i18n/admin";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { requireAdmin } from "@/lib/auth";
+
+const result = await requireAdmin(Astro);
+if (result instanceof Response) return result;
+const { user: currentUser } = result;
+
+// supabase is guaranteed by requireAuth having succeeded above
+// biome-ignore lint/style/noNonNullAssertion: requireAuth ensures supabase is defined
+const supabase = Astro.locals.supabase!;
+
+// Fetch all profiles sorted by created_at desc — allowed by profiles_admin_read_all RLS policy
+const { data: profiles } = await supabase
+  .from("profiles")
+  .select("id, display_name, role, created_at")
+  .order("created_at", { ascending: false });
+
+Astro.response.headers.set("Cache-Control", "no-store, private");
+---
+
+<BaseLayout
+  title="Users — Admin | Jinba"
+  description="User management"
+  locale="es"
+  path="/admin/users"
+  noindex
+>
+  <Fragment slot="head">
+    <meta name="referrer" content="no-referrer" />
+  </Fragment>
+
+  <main class="mx-auto max-w-5xl space-y-8 px-4 py-8">
+    <header class="flex items-center justify-between border-b border-[var(--color-border)] pb-6">
+      <div>
+        <h1 class="text-3xl font-bold">Usuarios</h1>
+        <p class="mt-1 text-sm text-[var(--color-muted)]">
+          {profiles?.length ?? 0} cuentas registradas
+        </p>
+      </div>
+      <a
+        href="/admin/scraping/"
+        class="text-sm text-[var(--color-muted)] underline hover:text-[var(--color-fg)]"
+      >
+        &larr; {adminT("page.heading")}
+      </a>
+    </header>
+
+    <div class="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)]">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-[var(--color-border)] bg-[var(--color-card)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+            <th class="px-4 py-3">Email / ID</th>
+            <th class="px-4 py-3">Nombre</th>
+            <th class="px-4 py-3">Rol</th>
+            <th class="px-4 py-3">Creado</th>
+            <th class="px-4 py-3">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(profiles ?? []).map((p, idx) => (
+            <tr class={`border-b border-[var(--color-border)] last:border-0 ${idx % 2 === 1 ? "bg-[var(--color-card)]/40" : ""}`}>
+              <td class="px-4 py-3 font-mono text-xs text-[var(--color-muted)]">{p.id}</td>
+              <td class="px-4 py-3">{p.display_name ?? "—"}</td>
+              <td class="px-4 py-3">
+                <span class={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${p.role === "admin" ? "border-amber-500/40 bg-amber-500/15 text-amber-400" : "border-[var(--color-border)] text-[var(--color-muted)]"}`}>
+                  {p.role}
+                </span>
+              </td>
+              <td class="px-4 py-3 tabular-nums text-xs text-[var(--color-muted)]">
+                {new Date(p.created_at).toLocaleDateString("es-ES", { year: "numeric", month: "short", day: "numeric" })}
+              </td>
+              <td class="px-4 py-3">
+                {p.id === currentUser.id ? (
+                  <span class="text-xs text-[var(--color-muted)]">Tú</span>
+                ) : (
+                  <form method="POST" action={`/admin/users/${p.id}/role`} style="display:inline">
+                    <input type="hidden" name="new_role" value={p.role === "admin" ? "user" : "admin"} />
+                    <button
+                      type="submit"
+                      class="rounded border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-muted)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-fg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+                    >
+                      {p.role === "admin" ? "Quitar admin" : "Hacer admin"}
+                    </button>
+                  </form>
+                )}
+              </td>
+            </tr>
+          ))}
+          {(profiles ?? []).length === 0 && (
+            <tr>
+              <td colspan="5" class="px-4 py-8 text-center text-[var(--color-muted)]">No hay usuarios registrados.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</BaseLayout>

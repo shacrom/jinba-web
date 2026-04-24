@@ -2,14 +2,13 @@
 /**
  * src/pages/admin/scraping/index.astro — M8
  *
- * Internal scraping telemetry dashboard. Unauthenticated but hidden:
+ * Internal scraping telemetry dashboard. Admin-only (F2 session auth):
  *   - noindex,nofollow meta
  *   - excluded from sitemap (see astro.config.mjs filter)
  *   - disallowed in robots.txt
- *   - gated by ?token=<ADMIN_PREVIEW_TOKEN> env match (fail-closed)
+ *   - gated by requireAdmin(Astro) — 404 for non-admins
  *
- * SSR only (export const prerender = false) so the token check + queries
- * run at request time. Service-role client never reaches the browser.
+ * SSR only (export const prerender = false). Service-role client never reaches the browser.
  */
 export const prerender = false;
 
@@ -38,31 +37,14 @@ import {
   formatErrorRow,
   formatRelative,
 } from "@/lib/admin-scraping-format";
+import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-// ── Token gate (REQ-ROUTE-01 + REQ-ROUTE-02) ─────────────────────────────────
-// Read ADMIN_PREVIEW_TOKEN. In Astro SSR on Vercel, both `process.env.*` and
-// `import.meta.env.*` resolve at request time. `process.env` is the most
-// reliable path for Vercel Function env vars (confirmed in runtime docs).
-const token = Astro.url.searchParams.get("token");
-const expected =
-  (typeof process !== "undefined" ? process.env.ADMIN_PREVIEW_TOKEN : undefined) ??
-  import.meta.env.ADMIN_PREVIEW_TOKEN;
+// ── Admin session gate (F2 — replaces ADMIN_PREVIEW_TOKEN) ───────────────────
+const adminResult = await requireAdmin(Astro);
+if (adminResult instanceof Response) return adminResult;
 
-if (!expected || !token || token !== expected) {
-  return new Response(
-    '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>404</title></head><body><h1>404</h1></body></html>',
-    {
-      status: 404,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store, private",
-      },
-    }
-  );
-}
-
-// ── Response headers (REQ-ROUTE-03) ──────────────────────────────────────────
+// ── Response headers ──────────────────────────────────────────────────────────
 Astro.response.headers.set("Cache-Control", "no-store, private");
 
 const now = new Date();
