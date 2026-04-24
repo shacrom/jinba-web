@@ -144,5 +144,19 @@
     "chassis_code": "B52",
     "year_start": 2012,
     "year_end": 2020
+  },
+  {
+    "make": "audi",
+    "model": "rs6",
+    "gen": "c7",
+    "make_name_es": "Audi",
+    "make_name_en": "Audi",
+    "model_name_es": "RS6",
+    "model_name_en": "RS6",
+    "gen_name_es": "C7",
+    "gen_name_en": "C7",
+    "chassis_code": "C7",
+    "year_start": 2013,
+    "year_end": 2018
   }
 ]
