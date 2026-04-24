@@ -1,3 +1,4 @@
+import { preprocessForOcr } from "@/lib/ficha-ocr-preprocess";
 import { parseFichaTecnica } from "@/lib/ficha-tecnica-parser";
 import type { ParsedFicha } from "@/lib/ficha-tecnica-parser";
 import { matchTaxonomy } from "@/lib/taxonomy-match";
@@ -107,7 +108,16 @@ export default function FichaTecnicaUpload({
         errorHandler: () => {},
       });
 
-      let imageSource: File | string = file;
+      // PSM 6 = "Assume a single uniform block of vertically aligned text"
+      // — best mode for Spanish fichas técnicas where all fields are in a
+      // single rectangular area, even if that area has multiple columns.
+      // The setParameters type signature doesn't include numeric PSM codes
+      // as strings, so we cast through unknown to keep biome happy.
+      await worker.setParameters({
+        tessedit_pageseg_mode: "6",
+      } as unknown as Parameters<typeof worker.setParameters>[0]);
+
+      let imageSource: File | Blob | string = file;
 
       // PDF: extract page 1 as a data URL via canvas
       if (file.type === "application/pdf") {
@@ -115,6 +125,15 @@ export default function FichaTecnicaUpload({
           imageSource = await extractPdfPage(file);
         } catch {
           // Fall back to letting tesseract attempt it directly
+          imageSource = file;
+        }
+      } else if (file.type.startsWith("image/")) {
+        // Preprocess: greyscale + Otsu threshold kills the pale-green
+        // watermark on Spanish fichas técnicas. Falls back to the original
+        // on any error.
+        try {
+          imageSource = await preprocessForOcr(file);
+        } catch {
           imageSource = file;
         }
       }
