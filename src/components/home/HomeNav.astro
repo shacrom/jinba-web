@@ -58,6 +58,12 @@ const tr = t(locale);
       >
         {tr("nav.calculator")}
       </a>
+      <a
+        href={`/${locale}/account/`}
+        class="rounded border border-[var(--color-border)] px-3 py-1 text-[var(--color-fg)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+      >
+        {tr("nav.account")}
+      </a>
       <ThemeToggle
         client:idle
         label={tr("theme.toggle")}

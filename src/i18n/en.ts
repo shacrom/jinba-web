@@ -213,6 +213,9 @@ export const en: Dict = DictSchema.parse({
   "services.detail.website": "Website",
   "services.detail.backToIndex": "Back to the directory",
 
+  // ── F2 nav additions ──
+  "nav.account": "Account",
+
   // ── search (M9) ──
   "nav.search": "Search",
   "search.pageTitle": "Search Jinba | Models, guides & workshops",

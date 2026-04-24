@@ -202,6 +202,9 @@ export const DictSchema = z.object({
   "services.detail.website": z.string(),
   "services.detail.backToIndex": z.string(),
 
+  // ── F2 nav additions ──
+  "nav.account": z.string(),
+
   // ── search (M9 — 16 new keys) ──
   "nav.search": z.string(),
   "search.pageTitle": z.string(),
@@ -525,6 +528,7 @@ export const es = DictSchema.parse({
 
   // ── search (M9) ──
   "nav.search": "Buscar",
+  "nav.account": "Cuenta",
   "search.pageTitle": "Buscar en Jinba | Fichas, guías y talleres",
   "search.pageDescription": "Busca modelos, guías editoriales y talleres recomendados en Jinba.",
   "search.heading": "Buscar",
