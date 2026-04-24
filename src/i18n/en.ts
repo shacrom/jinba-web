@@ -347,6 +347,9 @@ export const en: Dict = DictSchema.parse({
   "garage.ocr.error_generic": "Could not process the image. Try with a clearer photo.",
   "garage.ocr.error_consent_pii":
     "The image appears to contain personal data (licence plate, owner). We will not store it, but we recommend covering those fields before uploading.",
+  "garage.ocr.debug_toggle": "Show OCR extracted text",
+  "garage.ocr.debug_hint":
+    "For diagnostics only. If fields did not populate correctly, copy this text and share it to improve the parser.",
 });
 
 const DICTS = { es, en } as const satisfies Record<Locale, Dict>;

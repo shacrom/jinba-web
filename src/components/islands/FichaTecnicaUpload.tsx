@@ -77,6 +77,9 @@ export default function FichaTecnicaUpload({
   const [phase, setPhase] = useState<Phase>("idle");
   const [review, setReview] = useState<ReviewState | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  // Raw OCR text kept around so the user can inspect what tesseract pulled
+  // out when fields don't populate as expected. Never sent to the server.
+  const [rawOcrText, setRawOcrText] = useState("");
 
   // Editable review fields
   const [marcaEdit, setMarcaEdit] = useState("");
@@ -120,6 +123,8 @@ export default function FichaTecnicaUpload({
         data: { text },
       } = await worker.recognize(imageSource);
       await worker.terminate();
+
+      setRawOcrText(text ?? "");
 
       if (!text || text.trim().length === 0) {
         setPhase("error");
@@ -209,8 +214,24 @@ export default function FichaTecnicaUpload({
     setPhase("idle");
     setReview(null);
     setErrorMsg("");
+    setRawOcrText("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  // Debug panel — shows the raw tesseract output so the user can diagnose
+  // why fields didn't populate. Legal: the text stays in the browser.
+  const debugPanel =
+    rawOcrText.length > 0 ? (
+      <details className="mt-2 rounded border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-xs">
+        <summary className="cursor-pointer select-none text-[var(--color-muted)]">
+          {labels["garage.ocr.debug_toggle"] ?? "Show OCR extracted text"}
+        </summary>
+        <p className="mt-2 text-[var(--color-muted)]">{labels["garage.ocr.debug_hint"] ?? ""}</p>
+        <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded bg-[var(--color-bg)] p-2 font-mono text-[11px] leading-snug text-[var(--color-fg)]">
+          {rawOcrText}
+        </pre>
+      </details>
+    ) : null;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -254,6 +275,7 @@ export default function FichaTecnicaUpload({
         >
           {errorMsg || labels["garage.ocr.error_generic"]}
         </div>
+        {debugPanel}
         <button type="button" onClick={handleReset} className={btnSeconddaryCls}>
           {labels["garage.ocr.upload_label"]}
         </button>
@@ -421,6 +443,8 @@ export default function FichaTecnicaUpload({
         </button>
 
         <p className="text-xs text-[var(--color-muted)]">{labels["garage.ocr.privacy_note"]}</p>
+
+        {debugPanel}
       </div>
     );
   }

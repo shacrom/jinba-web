@@ -332,6 +332,8 @@ export const DictSchema = z.object({
   "garage.ocr.km_label": z.string(),
   "garage.ocr.error_generic": z.string(),
   "garage.ocr.error_consent_pii": z.string(),
+  "garage.ocr.debug_toggle": z.string(),
+  "garage.ocr.debug_hint": z.string(),
 });
 
 export type Dict = z.infer<typeof DictSchema>;
@@ -682,4 +684,7 @@ export const es = DictSchema.parse({
   "garage.ocr.error_generic": "No se pudo procesar la imagen. Inténtalo con una foto más clara.",
   "garage.ocr.error_consent_pii":
     "La imagen parece contener datos personales (matrícula, titular). No los almacenaremos, pero te recomendamos tapar esos campos antes de subirla.",
+  "garage.ocr.debug_toggle": "Ver texto extraído por OCR",
+  "garage.ocr.debug_hint":
+    "Solo para diagnóstico. Si los campos no se rellenaron correctamente, copia este texto y compártelo para mejorar el parser.",
 });
