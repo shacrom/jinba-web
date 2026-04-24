@@ -324,6 +324,29 @@ export const en: Dict = DictSchema.parse({
   "model.actions.in_garage": "In your garage",
   "model.actions.watch": "Watch this model",
   "model.actions.watching": "On your watchlist",
+
+  // ── garage OCR (ficha técnica upload) ──
+  "garage.source.manual": "Fill manually",
+  "garage.source.ocr": "From vehicle registration",
+  "garage.ocr.upload_label": "Upload a photo or PDF of the vehicle registration",
+  "garage.ocr.upload_hint":
+    "Processing happens in your browser. The image never leaves your device.",
+  "garage.ocr.processing": "Processing…",
+  "garage.ocr.no_match":
+    "We could not identify the model. Please review and fill in the details manually.",
+  "garage.ocr.review_title": "Review the detected data",
+  "garage.ocr.confirm": "Confirm and save",
+  "garage.ocr.privacy_note": "We do not store the licence plate, chassis number, or owner details.",
+  "garage.ocr.field.marca": "Make",
+  "garage.ocr.field.modelo": "Model",
+  "garage.ocr.field.ano": "Year of registration",
+  "garage.ocr.field.potencia": "Power",
+  "garage.ocr.field.cilindrada": "Displacement",
+  "garage.ocr.field.combustible": "Fuel type",
+  "garage.ocr.km_label": "Kilometres (not on the registration — add manually)",
+  "garage.ocr.error_generic": "Could not process the image. Try with a clearer photo.",
+  "garage.ocr.error_consent_pii":
+    "The image appears to contain personal data (licence plate, owner). We will not store it, but we recommend covering those fields before uploading.",
 });
 
 const DICTS = { es, en } as const satisfies Record<Locale, Dict>;

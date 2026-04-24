@@ -312,6 +312,26 @@ export const DictSchema = z.object({
   "model.actions.in_garage": z.string(),
   "model.actions.watch": z.string(),
   "model.actions.watching": z.string(),
+
+  // ── garage OCR (ficha técnica upload) ──
+  "garage.source.manual": z.string(),
+  "garage.source.ocr": z.string(),
+  "garage.ocr.upload_label": z.string(),
+  "garage.ocr.upload_hint": z.string(),
+  "garage.ocr.processing": z.string(),
+  "garage.ocr.no_match": z.string(),
+  "garage.ocr.review_title": z.string(),
+  "garage.ocr.confirm": z.string(),
+  "garage.ocr.privacy_note": z.string(),
+  "garage.ocr.field.marca": z.string(),
+  "garage.ocr.field.modelo": z.string(),
+  "garage.ocr.field.ano": z.string(),
+  "garage.ocr.field.potencia": z.string(),
+  "garage.ocr.field.cilindrada": z.string(),
+  "garage.ocr.field.combustible": z.string(),
+  "garage.ocr.km_label": z.string(),
+  "garage.ocr.error_generic": z.string(),
+  "garage.ocr.error_consent_pii": z.string(),
 });
 
 export type Dict = z.infer<typeof DictSchema>;
@@ -639,4 +659,27 @@ export const es = DictSchema.parse({
   "model.actions.in_garage": "En tu garaje",
   "model.actions.watch": "Seguir este modelo",
   "model.actions.watching": "En tu lista de seguimiento",
+
+  // ── garage OCR (ficha técnica upload) ──
+  "garage.source.manual": "Rellenar manualmente",
+  "garage.source.ocr": "Desde ficha técnica",
+  "garage.ocr.upload_label": "Sube una foto o PDF de la ficha técnica",
+  "garage.ocr.upload_hint":
+    "El procesado ocurre en tu navegador. La imagen nunca sale de tu dispositivo.",
+  "garage.ocr.processing": "Procesando…",
+  "garage.ocr.no_match":
+    "No pudimos identificar el modelo. Revísalo y completa los datos manualmente.",
+  "garage.ocr.review_title": "Revisa los datos detectados",
+  "garage.ocr.confirm": "Confirmar y guardar",
+  "garage.ocr.privacy_note": "No almacenamos matrícula, bastidor, ni datos del titular.",
+  "garage.ocr.field.marca": "Marca",
+  "garage.ocr.field.modelo": "Modelo",
+  "garage.ocr.field.ano": "Año de matriculación",
+  "garage.ocr.field.potencia": "Potencia",
+  "garage.ocr.field.cilindrada": "Cilindrada",
+  "garage.ocr.field.combustible": "Combustible",
+  "garage.ocr.km_label": "Kilómetros (no está en la ficha, añádelo a mano)",
+  "garage.ocr.error_generic": "No se pudo procesar la imagen. Inténtalo con una foto más clara.",
+  "garage.ocr.error_consent_pii":
+    "La imagen parece contener datos personales (matrícula, titular). No los almacenaremos, pero te recomendamos tapar esos campos antes de subirla.",
 });

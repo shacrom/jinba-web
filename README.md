@@ -233,6 +233,24 @@ Subsequent admin promotions can be done via `/admin/users` by any existing admin
 
 ---
 
+## Admin & data
+
+### Ficha tecnica OCR
+
+Users can populate the "add car" form by uploading a photo of their Spanish Ficha Tecnica / Permiso de Circulacion. OCR runs entirely in the browser via `tesseract.js` (lazy-loaded, ~3 MB chunk — not in the main bundle). The image never reaches our servers.
+
+A PII blacklist strips any line containing `MATRICULA`, `BASTIDOR`, `VIN`, `TITULAR`, `DNI`, `NIE`, `NIF`, `DOMICILIO`, `DIRECCION`, `CALLE`, `PERMISO`, or `EXPEDICION` before any field extraction. Only the sanitised technical fields (make, model, year, power, displacement, fuel type) are shown in the review UI. On confirm, a native form POST is submitted to the existing `/[lang]/account/garage/add` endpoint — no new API route exists, no image is uploaded.
+
+Relevant files:
+
+- `src/lib/ficha-tecnica-parser.ts` — PII blacklist + regex field extractor (pure, testable)
+- `src/lib/taxonomy-match.ts` — fuzzy make/model/year matcher against the generation taxonomy
+- `src/components/islands/FichaTecnicaUpload.tsx` — React island (`client:only="react"`)
+- `tests/unit/ficha-tecnica-parser.test.ts` — parser + PII filter tests
+- `tests/unit/taxonomy-match.test.ts` — fuzzy matcher tests
+
+---
+
 ## Design Decisions
 
 See `sdd/web-f1-bootstrap/design` in engram memory (project: jinba-web) for the full decision table (24 decisions). Key choices:

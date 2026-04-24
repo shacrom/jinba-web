@@ -1,15 +1,18 @@
 ---
 /**
- * src/pages/[lang]/account/garage/add.astro — F2 Batch 4
+ * src/pages/[lang]/account/garage/add.astro — F2 Batch 4 + OCR tab
  * Form to add a car to the user's garage. GET: render form. POST: insert.
+ * Tab switcher: "Fill manually" (default) | "From vehicle registration" (OCR).
  */
 export const prerender = false;
 
 import HomeNav from "@/components/home/HomeNav.astro";
+import FichaTecnicaUpload from "@/components/islands/FichaTecnicaUpload";
 import type { Locale } from "@/i18n/config";
 import { t } from "@/i18n/en";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { requireAuth } from "@/lib/auth";
+import type { TaxonomyEntry } from "@/lib/taxonomy-match";
 
 const lang = Astro.params.lang as string;
 if (lang !== "es" && lang !== "en") {
@@ -30,9 +33,23 @@ const supabase = Astro.locals.supabase!;
 const { data: generations } = await supabase
   .from("generations")
   .select(
-    "id, name_es, name_en, year_start, year_end, models!inner(name_es, name_en, makes!inner(name_es, name_en))"
+    "id, name_es, name_en, year_start, year_end, models!inner(slug, name_es, name_en, makes!inner(slug, name_es, name_en))"
   )
   .order("id");
+
+type RawGen = {
+  id: number;
+  name_es: string;
+  name_en: string;
+  year_start: number;
+  year_end: number | null;
+  models: {
+    slug: string;
+    name_es: string;
+    name_en: string;
+    makes: { slug: string; name_es: string; name_en: string };
+  };
+};
 
 type GenOption = {
   id: number;
@@ -40,20 +57,52 @@ type GenOption = {
 };
 
 const genOptions: GenOption[] = (generations ?? []).map((g) => {
-  const gen = g as unknown as {
-    id: number;
-    name_es: string;
-    name_en: string;
-    year_start: number;
-    year_end: number | null;
-    models: { name_es: string; name_en: string; makes: { name_es: string; name_en: string } };
-  };
+  const gen = g as unknown as RawGen;
   const makeName = locale === "es" ? gen.models.makes.name_es : gen.models.makes.name_en;
   const modelName = locale === "es" ? gen.models.name_es : gen.models.name_en;
   const genName = locale === "es" ? gen.name_es : gen.name_en;
   const years = gen.year_end ? `${gen.year_start}–${gen.year_end}` : `${gen.year_start}–`;
   return { id: gen.id, label: `${makeName} ${modelName} ${genName} (${years})` };
 });
+
+// Build taxonomy for the OCR island (make+model names for fuzzy matching)
+const ocrTaxonomy: TaxonomyEntry[] = (generations ?? []).map((g) => {
+  const gen = g as unknown as RawGen;
+  return {
+    generation_id: gen.id,
+    make_slug: gen.models.makes.slug,
+    make_name: locale === "es" ? gen.models.makes.name_es : gen.models.makes.name_en,
+    model_slug: gen.models.slug,
+    model_name: locale === "es" ? gen.models.name_es : gen.models.name_en,
+    gen_slug: gen.name_es.toLowerCase().replace(/\s+/g, "-"),
+    gen_name: locale === "es" ? gen.name_es : gen.name_en,
+    year_start: gen.year_start,
+    year_end: gen.year_end,
+  };
+});
+
+// Pre-resolved OCR island labels (no i18n logic inside the island)
+const ocrLabels: Record<string, string> = {
+  "garage.source.manual": tr("garage.source.manual"),
+  "garage.source.ocr": tr("garage.source.ocr"),
+  "garage.ocr.upload_label": tr("garage.ocr.upload_label"),
+  "garage.ocr.upload_hint": tr("garage.ocr.upload_hint"),
+  "garage.ocr.processing": tr("garage.ocr.processing"),
+  "garage.ocr.no_match": tr("garage.ocr.no_match"),
+  "garage.ocr.review_title": tr("garage.ocr.review_title"),
+  "garage.ocr.confirm": tr("garage.ocr.confirm"),
+  "garage.ocr.privacy_note": tr("garage.ocr.privacy_note"),
+  "garage.ocr.field.marca": tr("garage.ocr.field.marca"),
+  "garage.ocr.field.modelo": tr("garage.ocr.field.modelo"),
+  "garage.ocr.field.ano": tr("garage.ocr.field.ano"),
+  "garage.ocr.field.potencia": tr("garage.ocr.field.potencia"),
+  "garage.ocr.field.cilindrada": tr("garage.ocr.field.cilindrada"),
+  "garage.ocr.field.combustible": tr("garage.ocr.field.combustible"),
+  "garage.ocr.km_label": tr("garage.ocr.km_label"),
+  "garage.ocr.error_generic": tr("garage.ocr.error_generic"),
+  "garage.ocr.error_consent_pii": tr("garage.ocr.error_consent_pii"),
+  "garage.form.generation": tr("garage.form.generation"),
+};
 
 // Pre-fill from query param (from model detail page "Add to garage" button)
 const preselectedGenId = Astro.url.searchParams.get("gen_id") ?? "";
@@ -115,48 +164,116 @@ const path = `/${locale}/account/garage/add`;
       </div>
     )}
 
-    <form method="POST" class="space-y-5">
-      <div class="flex flex-col gap-1.5">
-        <label for="generation_id" class="text-sm font-medium">{tr("garage.form.generation")}</label>
-        <select id="generation_id" name="generation_id" required class={inputClass}>
-          <option value="">—</option>
-          {genOptions.map((g) => (
-            <option value={g.id} selected={String(g.id) === preselectedGenId}>{g.label}</option>
-          ))}
-        </select>
+    <!-- Tab switcher: Manual | OCR -->
+    <div class="mb-6" x-data="{ tab: 'manual' }">
+      <!-- Tab buttons -->
+      <div class="mb-5 flex gap-2 rounded-[var(--radius)] border border-[var(--color-border)] p-1" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          id="tab-manual"
+          aria-controls="panel-manual"
+          class="tab-btn flex-1 rounded px-3 py-1.5 text-sm font-medium transition-colors data-[active]:bg-[var(--color-accent)] data-[active]:text-[var(--color-accent-fg)]"
+          data-active
+          onclick="switchTab('manual')"
+        >
+          {tr("garage.source.manual")}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-ocr"
+          aria-controls="panel-ocr"
+          class="tab-btn flex-1 rounded px-3 py-1.5 text-sm font-medium transition-colors data-[active]:bg-[var(--color-accent)] data-[active]:text-[var(--color-accent-fg)]"
+          onclick="switchTab('ocr')"
+        >
+          {tr("garage.source.ocr")}
+        </button>
       </div>
 
-      <div class="flex flex-col gap-1.5">
-        <label for="year" class="text-sm font-medium">{tr("garage.form.year")}</label>
-        <input id="year" name="year" type="number" required min="1900" max={new Date().getFullYear()} class={inputClass} />
+      <!-- Manual tab panel -->
+      <div id="panel-manual" role="tabpanel" aria-labelledby="tab-manual">
+        <form method="POST" class="space-y-5">
+          <div class="flex flex-col gap-1.5">
+            <label for="generation_id" class="text-sm font-medium">{tr("garage.form.generation")}</label>
+            <select id="generation_id" name="generation_id" required class={inputClass}>
+              <option value="">—</option>
+              {genOptions.map((g) => (
+                <option value={g.id} selected={String(g.id) === preselectedGenId}>{g.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label for="year" class="text-sm font-medium">{tr("garage.form.year")}</label>
+            <input id="year" name="year" type="number" required min="1900" max={new Date().getFullYear()} class={inputClass} />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label for="km" class="text-sm font-medium">{tr("garage.form.km")}</label>
+            <input id="km" name="km" type="number" min="0" class={inputClass} />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label for="purchased_at" class="text-sm font-medium">{tr("garage.form.purchased_at")}</label>
+            <input id="purchased_at" name="purchased_at" type="date" class={inputClass} />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label for="purchase_price_eur" class="text-sm font-medium">{tr("garage.form.purchase_price")}</label>
+            <input id="purchase_price_eur" name="purchase_price_eur" type="number" min="0" step="1" class={inputClass} />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label for="notes" class="text-sm font-medium">{tr("garage.form.notes")}</label>
+            <textarea id="notes" name="notes" rows="3" class={inputClass}></textarea>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full rounded-[var(--radius)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent-fg)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+          >
+            {tr("garage.form.submit")}
+          </button>
+        </form>
       </div>
 
-      <div class="flex flex-col gap-1.5">
-        <label for="km" class="text-sm font-medium">{tr("garage.form.km")}</label>
-        <input id="km" name="km" type="number" min="0" class={inputClass} />
+      <!-- OCR tab panel -->
+      <div id="panel-ocr" role="tabpanel" aria-labelledby="tab-ocr" hidden>
+        <FichaTecnicaUpload
+          client:only="react"
+          locale={locale}
+          taxonomy={ocrTaxonomy}
+          addFormAction={`/${locale}/account/garage/add`}
+          labels={ocrLabels}
+        />
       </div>
-
-      <div class="flex flex-col gap-1.5">
-        <label for="purchased_at" class="text-sm font-medium">{tr("garage.form.purchased_at")}</label>
-        <input id="purchased_at" name="purchased_at" type="date" class={inputClass} />
-      </div>
-
-      <div class="flex flex-col gap-1.5">
-        <label for="purchase_price_eur" class="text-sm font-medium">{tr("garage.form.purchase_price")}</label>
-        <input id="purchase_price_eur" name="purchase_price_eur" type="number" min="0" step="1" class={inputClass} />
-      </div>
-
-      <div class="flex flex-col gap-1.5">
-        <label for="notes" class="text-sm font-medium">{tr("garage.form.notes")}</label>
-        <textarea id="notes" name="notes" rows="3" class={inputClass}></textarea>
-      </div>
-
-      <button
-        type="submit"
-        class="w-full rounded-[var(--radius)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent-fg)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
-      >
-        {tr("garage.form.submit")}
-      </button>
-    </form>
+    </div>
   </main>
 </BaseLayout>
+
+<script>
+  // Vanilla JS tab switcher — no framework, no alpine dependency
+  function switchTab(name: string) {
+    const panels = document.querySelectorAll("[role='tabpanel']");
+    const buttons = document.querySelectorAll(".tab-btn");
+
+    for (const panel of panels) {
+      const el = panel as HTMLElement;
+      el.hidden = el.id !== `panel-${name}`;
+    }
+    for (const btn of buttons) {
+      const el = btn as HTMLButtonElement;
+      if (el.id === `tab-${name}`) {
+        el.dataset.active = "";
+        el.setAttribute("aria-selected", "true");
+      } else {
+        delete el.dataset.active;
+        el.setAttribute("aria-selected", "false");
+      }
+    }
+  }
+
+  // Export for onclick attributes
+  (window as unknown as Record<string, unknown>).switchTab = switchTab;
+</script>
