@@ -406,6 +406,30 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       scrape_errors: {
         Row: {
           error_type: string
@@ -605,6 +629,88 @@ export type Database = {
           },
         ]
       }
+      user_cars: {
+        Row: {
+          created_at: string
+          generation_id: number
+          id: number
+          km: number | null
+          notes: string | null
+          purchase_price_eur: number | null
+          purchased_at: string | null
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          generation_id: number
+          id?: never
+          km?: number | null
+          notes?: string | null
+          purchase_price_eur?: number | null
+          purchased_at?: string | null
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          generation_id?: number
+          id?: never
+          km?: number | null
+          notes?: string | null
+          purchase_price_eur?: number | null
+          purchased_at?: string | null
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_cars_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_watchlist: {
+        Row: {
+          added_at: string
+          generation_id: number
+          id: number
+          notes: string | null
+          target_price_eur: number | null
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          generation_id: number
+          id?: never
+          notes?: string | null
+          target_price_eur?: number | null
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          generation_id?: number
+          id?: never
+          notes?: string | null
+          target_price_eur?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_watchlist_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       listings_public: {
@@ -762,10 +868,11 @@ export type Database = {
     }
     Functions: {
       get_median_km_per_year: { Args: { gen_id: number }; Returns: number }
+      is_admin: { Args: never; Returns: boolean }
       refresh_price_aggregates_daily: { Args: never; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "user" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -892,6 +999,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["user", "admin"],
+    },
   },
 } as const
