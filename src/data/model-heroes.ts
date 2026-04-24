@@ -11,6 +11,9 @@
 export interface ModelHero {
   /** Absolute path under /public. */
   image: string;
+  /** Smaller thumbnail used on list views (models index, related strips).
+   *  Generated alongside `hero.jpg` at max 640px wide, JPEG quality 75. */
+  thumb: string;
   /** Intrinsic dimensions — prevents CLS. Approximate is fine: CSS clips to aspect-video. */
   width: number;
   height: number;
@@ -27,6 +30,7 @@ type HeroKey = `${string}:${string}:${string}`;
 export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   "mazda:mx-5:na": {
     image: "/images/models/mazda/mx-5/na/hero.jpg",
+    thumb: "/images/models/mazda/mx-5/na/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Mazda MX-5 (NA) — primera generación",
@@ -36,6 +40,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "datsun:240z:s30": {
     image: "/images/models/datsun/240z/s30/hero.jpg",
+    thumb: "/images/models/datsun/240z/s30/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Datsun 240Z (S30) 1970-1973",
@@ -44,6 +49,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "seat:leon:mk1": {
     image: "/images/models/seat/leon/mk1/hero.jpg",
+    thumb: "/images/models/seat/leon/mk1/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "SEAT León 1M (Mk1)",
@@ -52,6 +58,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "seat:leon:mk2": {
     image: "/images/models/seat/leon/mk2/hero.jpg",
+    thumb: "/images/models/seat/leon/mk2/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "SEAT León 1P (Mk2)",
@@ -60,6 +67,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "seat:ibiza:mk4": {
     image: "/images/models/seat/ibiza/mk4/hero.jpg",
+    thumb: "/images/models/seat/ibiza/mk4/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "SEAT Ibiza 6J Cupra (Mk4)",
@@ -68,6 +76,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "volkswagen:golf:mk4": {
     image: "/images/models/volkswagen/golf/mk4/hero.jpg",
+    thumb: "/images/models/volkswagen/golf/mk4/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Volkswagen Golf IV (Mk4)",
@@ -76,6 +85,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "volkswagen:polo:mk5": {
     image: "/images/models/volkswagen/polo/mk5/hero.jpg",
+    thumb: "/images/models/volkswagen/polo/mk5/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Volkswagen Polo 6R (Mk5)",
@@ -85,6 +95,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "audi:a3:8p": {
     image: "/images/models/audi/a3/8p/hero.jpg",
+    thumb: "/images/models/audi/a3/8p/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Audi A3 8P",
@@ -93,6 +104,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "audi:rs6:c7": {
     image: "/images/models/audi/rs6/c7/hero.jpg",
+    thumb: "/images/models/audi/rs6/c7/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Audi RS6 Avant (C7)",
@@ -101,6 +113,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "renault:megane:mk3": {
     image: "/images/models/renault/megane/mk3/hero.jpg",
+    thumb: "/images/models/renault/megane/mk3/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Renault Mégane III",
@@ -109,6 +122,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "renault:clio:mk4": {
     image: "/images/models/renault/clio/mk4/hero.jpg",
+    thumb: "/images/models/renault/clio/mk4/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Renault Clio IV",
@@ -117,6 +131,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "ford:focus:mk2": {
     image: "/images/models/ford/focus/mk2/hero.jpg",
+    thumb: "/images/models/ford/focus/mk2/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Ford Focus II (Mk2)",
@@ -126,6 +141,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "opel:astra:j": {
     image: "/images/models/opel/astra/j/hero.jpg",
+    thumb: "/images/models/opel/astra/j/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Opel Astra J",
@@ -134,6 +150,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "peugeot:308:mk1": {
     image: "/images/models/peugeot/308/mk1/hero.jpg",
+    thumb: "/images/models/peugeot/308/mk1/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Peugeot 308 T7 (Mk1)",
@@ -143,6 +160,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "bmw:serie-3:e90": {
     image: "/images/models/bmw/serie-3/e90/hero.jpg",
+    thumb: "/images/models/bmw/serie-3/e90/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "BMW 320i Serie 3 (E90)",
@@ -152,6 +170,7 @@ export const MODEL_HEROES: Record<HeroKey, ModelHero> = {
   },
   "dacia:sandero:mk2": {
     image: "/images/models/dacia/sandero/mk2/hero.jpg",
+    thumb: "/images/models/dacia/sandero/mk2/thumb.jpg",
     width: 1600,
     height: 900,
     alt: "Dacia Sandero II (Mk2)",
