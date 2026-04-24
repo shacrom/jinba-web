@@ -50,4 +50,8 @@ export interface HeroImage {
   width: number;
   height: number;
   alt: string;
+  /** Optional attribution shown as a small caption under the hero.
+   *  Required for CC-BY / CC-BY-SA editorial images (Wikimedia Commons). */
+  credit?: string;
+  credit_url?: string;
 }

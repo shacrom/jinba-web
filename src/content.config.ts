@@ -63,6 +63,11 @@ const models = defineCollection({
     yearStart: z.number().int(),
     yearEnd: z.number().int().optional(),
     cover: z.string().optional(),
+    // Editorial hero image (absolute path under /public). Used as the
+    // model page hero when present; falls back to the Supabase listings
+    // photo path, then to the static placeholder.
+    cover_image: z.string().optional(),
+    cover_credit: z.string().optional(),
     // Discriminator field — required in M2
     section: z.enum(["overview", "buying-guide", "common-faults", "modifications"]),
     // Editorial overrides (canonical source is DB trims rows)

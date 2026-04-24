@@ -70,3 +70,15 @@ const yearsStr = `${years.start}${years.end ? `–${years.end}` : ""}`;
     </p>
   </div>
 </section>
+
+{heroImage?.credit && (
+  <p class="mt-2 text-[0.7rem] text-[var(--color-muted)]">
+    {heroImage.credit_url ? (
+      <a href={heroImage.credit_url} rel="noopener noreferrer nofollow" target="_blank" class="underline decoration-dotted underline-offset-2">
+        {heroImage.credit}
+      </a>
+    ) : (
+      heroImage.credit
+    )}
+  </p>
+)}

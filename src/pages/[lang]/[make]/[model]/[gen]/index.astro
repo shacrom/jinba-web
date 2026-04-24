@@ -18,6 +18,7 @@ import RelatedListingsStrip from "@/components/model/RelatedListingsStrip.astro"
 import SpecBand from "@/components/model/SpecBand.astro";
 import TocSidebar from "@/components/model/TocSidebar.astro";
 import TocSidebarMobile from "@/components/model/TocSidebarMobile.tsx";
+import { getModelHero } from "@/data/model-heroes";
 import type { Locale } from "@/i18n/config";
 import { t } from "@/i18n/en";
 import BaseLayout from "@/layouts/BaseLayout.astro";
@@ -228,9 +229,22 @@ const path = `/${lang}/${g.models.makes.slug}/${g.models.slug}/${g.slug}/`;
 const title = tr("seo.modelPageTitle").replace("{gen}", `${makeName} ${modelName} ${genName}`);
 const description = `${makeName} ${modelName} ${genName} (${g.year_start}${g.year_end ? `–${g.year_end}` : ""}): ${tr("model.toc.buying_guide")}, ${tr("model.toc.common_faults")}, ${tr("model.toc.modifications")}.`;
 
-// Hero image from first privacy-processed listing photo
+// Hero image resolution order (first hit wins):
+//   1. Editorial registry in src/data/model-heroes.ts (self-hosted, attributed).
+//   2. First privacy-processed listing photo from Supabase.
+//   3. Static placeholder in the ModelHero component.
 let heroImage: HeroImage | null = null;
-if (supabase) {
+const editorialHero = getModelHero(g.models.makes.slug, g.models.slug, g.slug);
+if (editorialHero) {
+  heroImage = {
+    url: editorialHero.image,
+    width: editorialHero.width,
+    height: editorialHero.height,
+    alt: editorialHero.alt,
+    credit: editorialHero.credit,
+    credit_url: editorialHero.source_url,
+  };
+} else if (supabase) {
   try {
     const { data: heroRows } = await supabase
       .from("listings_public")
