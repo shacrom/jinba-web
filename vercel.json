@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "astro",
   "crons": [
-    { "path": "/api/cron/sync-prices", "schedule": "0 */6 * * *" },
+    { "path": "/api/cron/sync-prices", "schedule": "0 4 * * *" },
     { "path": "/api/cron/seed-prices", "schedule": "0 3 1 * *" }
   ],
   "redirects": [{ "source": "/", "destination": "/es/", "permanent": false }],
