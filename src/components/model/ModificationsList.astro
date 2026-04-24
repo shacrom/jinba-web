@@ -27,7 +27,10 @@ const legalityClasses: Record<LegalityKey, string> = {
 {mods.length > 0 && (
   <div class="mt-6 grid gap-4 sm:grid-cols-2">
     {mods.map((mod) => (
-      <article class="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-4">
+      <article
+        class="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-4"
+        data-applies-to={(mod.applies_to ?? []).join(",")}
+      >
         <div class="mb-2 flex flex-wrap items-center gap-2">
           <span class="text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
             {mod.category}

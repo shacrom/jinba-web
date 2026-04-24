@@ -334,6 +334,8 @@ export const DictSchema = z.object({
   "garage.ocr.error_consent_pii": z.string(),
   "garage.ocr.debug_toggle": z.string(),
   "garage.ocr.debug_hint": z.string(),
+  "model.trim_filter.label": z.string(),
+  "model.trim_filter.all": z.string(),
 });
 
 export type Dict = z.infer<typeof DictSchema>;
@@ -687,4 +689,6 @@ export const es = DictSchema.parse({
   "garage.ocr.debug_toggle": "Ver texto extraído por OCR",
   "garage.ocr.debug_hint":
     "Solo para diagnóstico. Si los campos no se rellenaron correctamente, copia este texto y compártelo para mejorar el parser.",
+  "model.trim_filter.label": "Filtrar por motor",
+  "model.trim_filter.all": "Todos los motores",
 });

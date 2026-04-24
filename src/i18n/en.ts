@@ -350,6 +350,8 @@ export const en: Dict = DictSchema.parse({
   "garage.ocr.debug_toggle": "Show OCR extracted text",
   "garage.ocr.debug_hint":
     "For diagnostics only. If fields did not populate correctly, copy this text and share it to improve the parser.",
+  "model.trim_filter.label": "Filter by engine",
+  "model.trim_filter.all": "All engines",
 });
 
 const DICTS = { es, en } as const satisfies Record<Locale, Dict>;

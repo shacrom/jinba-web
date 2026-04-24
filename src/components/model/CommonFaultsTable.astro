@@ -43,7 +43,10 @@ const severityClasses: Record<SeverityKey, string> = {
       </thead>
       <tbody class="divide-y divide-[var(--color-border)]">
         {faults.map((fault) => (
-          <tr class="bg-[var(--color-card)] hover:bg-[var(--color-border)]">
+          <tr
+            class="bg-[var(--color-card)] hover:bg-[var(--color-border)]"
+            data-applies-to={(fault.applies_to ?? []).join(",")}
+          >
             <td class="px-4 py-3">
               <p class="font-medium">{fault.description}</p>
               <p class="mt-0.5 text-xs text-[var(--color-muted)]">{fault.frequency}</p>

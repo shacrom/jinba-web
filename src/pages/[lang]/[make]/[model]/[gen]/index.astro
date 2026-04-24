@@ -11,6 +11,7 @@ import HomeNav from "@/components/home/HomeNav.astro";
 import UserActionsIsland from "@/components/islands/UserActionsIsland.tsx";
 import CommonFaultsTable from "@/components/model/CommonFaultsTable.astro";
 import LivePriceStats from "@/components/model/LivePriceStats.astro";
+import TrimFilter from "@/components/model/TrimFilter.astro";
 import ModelFooter from "@/components/model/ModelFooter.astro";
 import ModelHero from "@/components/model/ModelHero.astro";
 import ModificationsList from "@/components/model/ModificationsList.astro";
@@ -521,6 +522,11 @@ const ogImage =
           ) : (
             <p class="text-[var(--color-muted)] italic">{tr("section.comingSoon")}</p>
           )}
+          {/* Shared trim pill bar — also filters the mods section below. */}
+          <TrimFilter
+            trims={trims.map((t) => ({ name: t.name, engineCode: t.engineCode }))}
+            locale={lang}
+          />
           <CommonFaultsTable faults={faults} locale={lang} />
         </section>
 

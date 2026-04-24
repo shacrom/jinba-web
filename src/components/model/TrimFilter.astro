@@ -1,0 +1,99 @@
+---
+/**
+ * TrimFilter.astro
+ *
+ * Pill bar that filters faults / mods by engine code. Progressive-
+ * enhancement: the page renders with everything visible, and an inline
+ * client script toggles the `[data-applies-to]` elements based on the
+ * clicked pill. No hydration, no React — zero JS runs for users who
+ * never click the filter.
+ *
+ * Contract with the content:
+ *   - Every fault row / mod card rendered below must carry
+ *     `data-applies-to="CODE1,CODE2,..."` (empty = gen-wide, always visible).
+ *   - The trim passed here uses `engineCode` as the key. The MDX
+ *     `applies_to` array stores the same codes.
+ */
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+
+export interface TrimOption {
+  name: string;
+  engineCode: string | null;
+}
+
+export interface Props {
+  trims: TrimOption[];
+  locale: Locale;
+}
+
+const { trims, locale } = Astro.props;
+const tr = t(locale);
+
+// Drop trims without an engine code — they can't act as a filter key.
+const selectableTrims = trims.filter((t) => t.engineCode);
+---
+
+{selectableTrims.length > 0 && (
+  <div
+    class="not-prose my-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-3"
+    data-trim-filter
+  >
+    <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)]">
+      {tr("model.trim_filter.label")}
+    </p>
+    <div class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        data-trim-key="__all"
+        aria-pressed="true"
+        class="rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)] px-3 py-1 text-xs font-medium text-[var(--color-accent-fg)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] aria-[pressed=false]:bg-transparent aria-[pressed=false]:border-[var(--color-border)] aria-[pressed=false]:text-[var(--color-fg)] hover:border-[var(--color-accent)]"
+      >
+        {tr("model.trim_filter.all")}
+      </button>
+      {selectableTrims.map((trim) => (
+        <button
+          type="button"
+          data-trim-key={trim.engineCode}
+          aria-pressed="false"
+          class="rounded-full border border-[var(--color-border)] bg-transparent px-3 py-1 text-xs font-medium text-[var(--color-fg)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] aria-[pressed=true]:border-[var(--color-accent)] aria-[pressed=true]:bg-[var(--color-accent)] aria-[pressed=true]:text-[var(--color-accent-fg)] hover:border-[var(--color-accent)]"
+        >
+          {trim.name}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+
+<script>
+  // Progressive enhancement — zero cost for users who never click.
+  // Filter any element annotated with `data-applies-to` on the whole page.
+  for (const bar of document.querySelectorAll("[data-trim-filter]")) {
+    bar.addEventListener("click", (event) => {
+      const target = event.target as HTMLElement | null;
+      const button = target?.closest("button[data-trim-key]");
+      if (!button) return;
+
+      const selectedKey = button.getAttribute("data-trim-key") ?? "__all";
+
+      // Update pill pressed state within THIS filter bar only.
+      for (const other of bar.querySelectorAll("button[data-trim-key]")) {
+        other.setAttribute("aria-pressed", String(other === button));
+      }
+
+      // Toggle every element with data-applies-to across the page.
+      // Rule: show if key = "__all" OR applies_to is empty (gen-wide) OR
+      // applies_to contains the selected key.
+      for (const el of document.querySelectorAll<HTMLElement>("[data-applies-to]")) {
+        const raw = el.getAttribute("data-applies-to") ?? "";
+        const codes = raw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const visible =
+          selectedKey === "__all" || codes.length === 0 || codes.includes(selectedKey);
+        el.hidden = !visible;
+      }
+    });
+  }
+</script>
