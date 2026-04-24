@@ -29,35 +29,46 @@ if (Astro.request.method === "POST") {
     const email = (form.get("email") as string | null)?.trim() ?? "";
     const password = (form.get("password") as string | null) ?? "";
     const displayName = (form.get("display_name") as string | null)?.trim() ?? null;
+    const consent = form.get("consent") === "on";
+
+    if (!consent) {
+      errorMsg = tr("auth.signup.error_consent");
+    }
 
     // emailRedirectTo overrides Supabase's Site URL default (which ships as
     // http://localhost:3000 until the dashboard is configured). The URL must
     // also be added to the dashboard's Redirect URLs allowlist — we use **
     // so it accepts every Jinba path.
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: displayName ? { display_name: displayName } : undefined,
-        emailRedirectTo: `${Astro.url.origin}/${locale}/auth/callback`,
-      },
-    });
+    const signupPromise = !errorMsg
+      ? supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: displayName ? { display_name: displayName } : undefined,
+            emailRedirectTo: `${Astro.url.origin}/${locale}/auth/callback`,
+          },
+        })
+      : null;
 
-    if (!error) {
+    const { error } = signupPromise ? await signupPromise : { error: null };
+
+    if (signupPromise && !error) {
       return Astro.redirect(`/${locale}/auth/login?check_email=1`);
     }
 
     // Map Supabase error messages onto localised keys; fall back to the raw
     // message so the user at least sees what Supabase said.
-    const msg = error.message.toLowerCase();
-    if (msg.includes("already registered") || msg.includes("already exists")) {
-      errorMsg = tr("auth.signup.error_exists");
-    } else if (msg.includes("weak password") || msg.includes("should be at least")) {
-      errorMsg = tr("auth.signup.error_weak_password");
-    } else if (msg.includes("rate limit") || msg.includes("too many")) {
-      errorMsg = tr("auth.signup.error_rate_limit");
-    } else {
-      errorMsg = tr("auth.signup.error_generic");
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes("already registered") || msg.includes("already exists")) {
+        errorMsg = tr("auth.signup.error_exists");
+      } else if (msg.includes("weak password") || msg.includes("should be at least")) {
+        errorMsg = tr("auth.signup.error_weak_password");
+      } else if (msg.includes("rate limit") || msg.includes("too many")) {
+        errorMsg = tr("auth.signup.error_rate_limit");
+      } else {
+        errorMsg = tr("auth.signup.error_generic");
+      }
     }
   }
 }
@@ -125,6 +136,27 @@ const path = `/${locale}/auth/signup`;
           class="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--color-fg)] placeholder:text-[var(--color-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
         />
       </div>
+
+      <label class="flex items-start gap-2 text-sm text-[var(--color-muted)]">
+        <input
+          type="checkbox"
+          name="consent"
+          required
+          class="mt-1 h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-card)] accent-[var(--color-accent)]"
+        />
+        <span>
+          {tr("auth.signup.consent")}{" "}
+          <a
+            href={`/${locale}/privacy`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline text-[var(--color-fg)] hover:opacity-80"
+          >
+            {tr("auth.signup.consent_link")}
+          </a>
+          .
+        </span>
+      </label>
 
       <button
         type="submit"

@@ -1,0 +1,287 @@
+---
+/**
+ * Privacy policy — public, static, prerendered for both locales.
+ * Route lives at /es/privacidad (alias) and /en/privacy via the
+ * getStaticPaths rewrite below.
+ */
+import HomeFooter from "@/components/home/HomeFooter.astro";
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+export async function getStaticPaths() {
+  return [
+    { params: { lang: "es" }, props: { lang: "es" as Locale } },
+    { params: { lang: "en" }, props: { lang: "en" as Locale } },
+  ];
+}
+
+const { lang } = Astro.props as { lang: Locale };
+const path = `/${lang}/privacy`;
+const title = lang === "es" ? "Política de privacidad" : "Privacy Policy";
+const description =
+  lang === "es"
+    ? "Qué datos personales guardamos, para qué, cuánto tiempo y tus derechos (RGPD)."
+    : "What personal data we store, why, for how long, and your rights under the GDPR.";
+---
+
+<BaseLayout title={`${title} | Jinba`} description={description} locale={lang} path={path}>
+  <HomeNav locale={lang} />
+
+  <main class="mx-auto max-w-3xl px-4 py-10 text-sm leading-relaxed text-[var(--color-fg)]">
+    <h1 class="mb-2 text-3xl font-bold">{title}</h1>
+    <p class="mb-8 text-[var(--color-muted)]">
+      {
+        lang === "es"
+          ? "Última actualización: 2026-04-24."
+          : "Last updated: 2026-04-24."
+      }
+    </p>
+
+    {
+      lang === "es" ? (
+        <div class="space-y-6">
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">1. Responsable del tratamiento</h2>
+            <p>
+              Jinba es un proyecto personal operado por Marcos (<a
+                href="mailto:marmibas.dev@gmail.com"
+                class="underline"
+              >
+                marmibas.dev@gmail.com
+              </a>
+              ). Al no tratar datos a escala y no ser requerido, no hay DPO designado —
+              para cualquier consulta sobre privacidad escribe directamente a ese correo.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">2. Qué datos guardamos</h2>
+            <p class="mb-2">Tratamos estrictamente los datos mínimos para que la app funcione:</p>
+            <ul class="list-inside list-disc space-y-1">
+              <li>
+                <strong>Cuenta</strong>: correo electrónico y, opcionalmente, un nombre de
+                usuario. La contraseña se almacena cifrada por Supabase (hash bcrypt); nunca
+                la vemos en claro.
+              </li>
+              <li>
+                <strong>Garage</strong>: coches que asocias a tu cuenta — marca, modelo,
+                generación, año, kilómetros, fecha y precio de compra (opcionales) y notas
+                libres que tú mismo introduzcas.
+              </li>
+              <li>
+                <strong>Watchlist</strong>: modelos que quieres seguir — referencia del
+                modelo, precio objetivo (opcional), notas libres.
+              </li>
+              <li>
+                <strong>Sesión</strong>: cookies httpOnly gestionadas por Supabase para
+                mantener la sesión iniciada.
+              </li>
+            </ul>
+            <p class="mt-3 font-semibold text-[var(--color-accent)]">
+              Lo que NO guardamos:
+            </p>
+            <ul class="list-inside list-disc space-y-1">
+              <li>Matrícula del vehículo.</li>
+              <li>Número de bastidor (VIN).</li>
+              <li>DNI, NIE o cualquier identificador del titular del vehículo.</li>
+              <li>Domicilio.</li>
+              <li>Contenido de ficha técnica escaneada (el procesado OCR ocurre en tu navegador y la imagen nunca llega a nuestros servidores).</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">3. Para qué lo usamos</h2>
+            <ul class="list-inside list-disc space-y-1">
+              <li>Autenticarte y mantener tu sesión (base legal: ejecución del contrato, art. 6.1.b RGPD).</li>
+              <li>Mostrarte tu garage y tu watchlist, y calcular el valor de mercado actual de tus coches cruzando con nuestras medianas agregadas (ejecución del contrato).</li>
+              <li>Detección y prevención de abusos del servicio (interés legítimo, art. 6.1.f).</li>
+            </ul>
+            <p class="mt-3">
+              Analítica web: usamos Plausible (<a
+                href="https://plausible.io/data-policy"
+                rel="noopener noreferrer"
+                target="_blank"
+                class="underline"
+              >
+                política
+              </a>
+              ), sin cookies, sin seguimiento cruzado entre sitios. No nos hace falta pedirte
+              consentimiento para esto.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">4. Con quién compartimos</h2>
+            <ul class="list-inside list-disc space-y-1">
+              <li>
+                <strong>Supabase</strong> (encargado del tratamiento, hospedaje de la base
+                de datos — EU-West).
+              </li>
+              <li>
+                <strong>Vercel</strong> (encargado del tratamiento, hospedaje del frontend).
+              </li>
+              <li>
+                <strong>Plausible</strong> (encargado del tratamiento, analítica agregada
+                anónima).
+              </li>
+            </ul>
+            <p class="mt-3">
+              No vendemos ni cedemos datos personales a terceros con fines comerciales.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">5. Cuánto tiempo los guardamos</h2>
+            <p>
+              Mientras tengas cuenta activa. Cuando borras tu cuenta, eliminamos tu fila
+              de <code>profiles</code>, tu garage y tu watchlist de forma inmediata. Los
+              backups rotan cada 30 días.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">6. Tus derechos</h2>
+            <p class="mb-2">Puedes ejercer en cualquier momento:</p>
+            <ul class="list-inside list-disc space-y-1">
+              <li>Acceso — te enviamos todo lo que guardamos sobre ti.</li>
+              <li>Rectificación — corrige datos inexactos desde <a href={`/${lang}/account/`} class="underline">tu cuenta</a>.</li>
+              <li>Supresión (derecho al olvido) — borrado total de tu cuenta bajo petición.</li>
+              <li>Limitación y oposición al tratamiento.</li>
+              <li>Portabilidad — export de tus datos en JSON.</li>
+            </ul>
+            <p class="mt-3">
+              Envía un correo a <a href="mailto:marmibas.dev@gmail.com" class="underline">marmibas.dev@gmail.com</a>.
+              Respondemos en un máximo de 30 días. Si no quedas conforme, puedes reclamar
+              ante la <a href="https://www.aepd.es" rel="noopener noreferrer" target="_blank" class="underline">Agencia Española de Protección de Datos (AEPD)</a>.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">7. Cambios</h2>
+            <p>
+              Publicamos cualquier cambio material en esta página y actualizamos la fecha
+              arriba. Cambios significativos se notifican por email a las cuentas existentes.
+            </p>
+          </section>
+        </div>
+      ) : (
+        <div class="space-y-6">
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">1. Data controller</h2>
+            <p>
+              Jinba is a personal project operated by Marcos (<a
+                href="mailto:marmibas.dev@gmail.com"
+                class="underline"
+              >
+                marmibas.dev@gmail.com
+              </a>
+              ). No DPO is appointed (not required at this scale); write to that address for any privacy query.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">2. What we store</h2>
+            <p class="mb-2">We process only the minimum needed to run the app:</p>
+            <ul class="list-inside list-disc space-y-1">
+              <li>
+                <strong>Account</strong>: email and, optionally, a display name. The
+                password is stored hashed (bcrypt) by Supabase; we never see it in plaintext.
+              </li>
+              <li>
+                <strong>Garage</strong>: cars you link to your account — make, model,
+                generation, year, odometer, purchase date and price (optional), and any
+                notes you type.
+              </li>
+              <li>
+                <strong>Watchlist</strong>: models you want to track — model reference,
+                target price (optional), free-form notes.
+              </li>
+              <li>
+                <strong>Session</strong>: httpOnly cookies managed by Supabase to keep you signed in.
+              </li>
+            </ul>
+            <p class="mt-3 font-semibold text-[var(--color-accent)]">
+              What we do NOT store:
+            </p>
+            <ul class="list-inside list-disc space-y-1">
+              <li>Vehicle licence plate.</li>
+              <li>VIN / chassis number.</li>
+              <li>Any national ID (DNI, NIE, passport number).</li>
+              <li>Residential address.</li>
+              <li>Scanned vehicle documents — OCR runs in your browser; the image never reaches our servers.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">3. Purposes</h2>
+            <ul class="list-inside list-disc space-y-1">
+              <li>Authenticate you and persist your session (legal basis: performance of contract, GDPR art. 6.1.b).</li>
+              <li>Display your garage and watchlist, and compute the current market value of your cars by cross-referencing our aggregated medians (contract).</li>
+              <li>Service-abuse detection and prevention (legitimate interest, art. 6.1.f).</li>
+            </ul>
+            <p class="mt-3">
+              Web analytics: we use Plausible (<a
+                href="https://plausible.io/data-policy"
+                rel="noopener noreferrer"
+                target="_blank"
+                class="underline"
+              >
+                policy
+              </a>
+              ), cookie-less, no cross-site tracking — consent is not required.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">4. Who we share with</h2>
+            <ul class="list-inside list-disc space-y-1">
+              <li><strong>Supabase</strong> (processor — database hosting, EU-West).</li>
+              <li><strong>Vercel</strong> (processor — frontend hosting).</li>
+              <li><strong>Plausible</strong> (processor — anonymous aggregate analytics).</li>
+            </ul>
+            <p class="mt-3">
+              We do not sell or disclose personal data to third parties for commercial purposes.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">5. Retention</h2>
+            <p>
+              As long as your account is active. When you delete your account, your
+              <code> profiles</code>, garage, and watchlist rows are erased immediately.
+              Backups rotate on a 30-day cycle.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">6. Your rights</h2>
+            <p class="mb-2">You may exercise at any time:</p>
+            <ul class="list-inside list-disc space-y-1">
+              <li>Access — we send you everything we store about you.</li>
+              <li>Rectification — fix inaccurate data from <a href={`/${lang}/account/`} class="underline">your account page</a>.</li>
+              <li>Erasure (right to be forgotten) — full account deletion on request.</li>
+              <li>Restriction of and objection to processing.</li>
+              <li>Portability — your data exported as JSON.</li>
+            </ul>
+            <p class="mt-3">
+              Email <a href="mailto:marmibas.dev@gmail.com" class="underline">marmibas.dev@gmail.com</a>.
+              We respond within 30 days. If you are not satisfied, you may lodge a complaint
+              with the <a href="https://www.aepd.es/en" rel="noopener noreferrer" target="_blank" class="underline">Spanish Data Protection Agency (AEPD)</a>.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="mb-2 text-xl font-semibold">7. Changes</h2>
+            <p>
+              Material changes are published on this page with an updated date above.
+              Significant changes are emailed to existing accounts.
+            </p>
+          </section>
+        </div>
+      )
+    }
+  </main>
+
+  <HomeFooter locale={lang} />
+</BaseLayout>
