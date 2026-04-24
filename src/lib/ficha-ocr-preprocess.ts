@@ -21,7 +21,14 @@
  *   6. Return the processed canvas as a Blob tesseract can ingest.
  */
 
-const MAX_WIDTH = 2000;
+const MAX_WIDTH = 2400;
+/**
+ * Small images get upscaled. Tesseract accuracy drops sharply below ~20px
+ * character height; a 1200px-wide photo of a ficha has body text around
+ * 15px tall, which is in the fail zone. Upscaling to ~2400px roughly
+ * doubles the character height and reliably improves recognition.
+ */
+const TARGET_MIN_WIDTH = 2000;
 
 /**
  * Otsu's method — computes an optimal binarization threshold from a
@@ -95,7 +102,13 @@ export async function preprocessForOcr(file: File): Promise<Blob> {
     const naturalHeight = img.naturalHeight || img.height;
     if (!naturalWidth || !naturalHeight) return file;
 
-    const scale = naturalWidth > MAX_WIDTH ? MAX_WIDTH / naturalWidth : 1;
+    // Decide the target width:
+    //   - above MAX_WIDTH → downscale.
+    //   - between TARGET_MIN_WIDTH and MAX_WIDTH → keep as-is.
+    //   - below TARGET_MIN_WIDTH → upscale to at least TARGET_MIN_WIDTH.
+    let scale = 1;
+    if (naturalWidth > MAX_WIDTH) scale = MAX_WIDTH / naturalWidth;
+    else if (naturalWidth < TARGET_MIN_WIDTH) scale = TARGET_MIN_WIDTH / naturalWidth;
     const targetWidth = Math.round(naturalWidth * scale);
     const targetHeight = Math.round(naturalHeight * scale);
 
@@ -104,6 +117,10 @@ export async function preprocessForOcr(file: File): Promise<Blob> {
     canvas.height = targetHeight;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return file;
+    // "high" quality resampling on upscale keeps edges cleaner than the
+    // default bilinear and pays dividends for OCR on small source photos.
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
     const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);

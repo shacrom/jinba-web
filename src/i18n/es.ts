@@ -667,7 +667,7 @@ export const es = DictSchema.parse({
   "garage.source.ocr": "Desde ficha técnica",
   "garage.ocr.upload_label": "Sube una foto o PDF de la ficha técnica",
   "garage.ocr.upload_hint":
-    "El procesado ocurre en tu navegador. La imagen nunca sale de tu dispositivo.",
+    "Procesado 100% en tu navegador — la imagen no sale de tu dispositivo. Para buenos resultados: foto bien iluminada, nítida y enfocando solo la zona de datos (marca, tipo, variante, potencia).",
   "garage.ocr.processing": "Procesando…",
   "garage.ocr.no_match":
     "No pudimos identificar el modelo. Revísalo y completa los datos manualmente.",

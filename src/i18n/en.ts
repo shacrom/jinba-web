@@ -330,7 +330,7 @@ export const en: Dict = DictSchema.parse({
   "garage.source.ocr": "From vehicle registration",
   "garage.ocr.upload_label": "Upload a photo or PDF of the vehicle registration",
   "garage.ocr.upload_hint":
-    "Processing happens in your browser. The image never leaves your device.",
+    "Processed 100% in your browser — the image never leaves your device. For best results: a well-lit, sharp photo focused on the technical-data section (make, type, variant, power).",
   "garage.ocr.processing": "Processing…",
   "garage.ocr.no_match":
     "We could not identify the model. Please review and fill in the details manually.",
