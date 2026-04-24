@@ -1,0 +1,71 @@
+---
+import { adminT } from "@/i18n/admin";
+import type { IngestRunSummary } from "@/lib/admin-ingest-format";
+
+export interface Props {
+  rows: IngestRunSummary[];
+}
+
+const { rows } = Astro.props;
+---
+
+<section id="ingest-runs" aria-labelledby="ingest-runs-heading">
+  <h3 id="ingest-runs-heading" class="mb-3 text-lg font-semibold">
+    {adminT("ingest.runs.heading")}
+  </h3>
+  <div class="overflow-x-auto rounded-[var(--radius)] border border-[var(--color-border)]">
+    <table class="min-w-full text-sm">
+      <caption class="sr-only">{adminT("ingest.runs.caption")}</caption>
+      <thead class="bg-[var(--color-card)] text-xs uppercase text-[var(--color-muted)]">
+        <tr>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("ingest.runs.col.runId")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("ingest.runs.col.sources")}</th>
+          <th scope="col" class="px-3 py-2 text-right">{adminT("ingest.runs.col.rows")}</th>
+          <th scope="col" class="px-3 py-2 text-right">{adminT("ingest.runs.col.gens")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("ingest.runs.col.observations")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("ingest.runs.col.lastInserted")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.length === 0 && (
+            <tr>
+              <td
+                colspan="6"
+                class="px-3 py-4 text-center text-[var(--color-muted)]"
+              >
+                {adminT("ingest.runs.row.empty")}
+              </td>
+            </tr>
+          )
+        }
+        {
+          rows.map((r) => (
+            <tr class="border-t border-[var(--color-border)]">
+              {/* Truncate long run IDs (UUIDs) to keep column narrow. */}
+              <td class="px-3 py-2 font-mono text-xs" title={r.ingestRunId}>
+                {r.ingestRunId.length > 20 ? `${r.ingestRunId.slice(0, 20)}…` : r.ingestRunId}
+              </td>
+              <td class="px-3 py-2 font-mono text-xs">{r.sourceSlugs.join(", ")}</td>
+              <td class="px-3 py-2 text-right tabular-nums">{r.rowCount}</td>
+              <td class="px-3 py-2 text-right tabular-nums">{r.gensTouched}</td>
+              <td class="px-3 py-2 whitespace-nowrap text-xs text-[var(--color-muted)]">
+                {r.firstObservation && r.lastObservation ? (
+                  <>
+                    {r.firstObservation.slice(0, 10)}
+                    {r.firstObservation.slice(0, 10) !== r.lastObservation.slice(0, 10) && (
+                      <> — {r.lastObservation.slice(0, 10)}</>
+                    )}
+                  </>
+                ) : (
+                  "—"
+                )}
+              </td>
+              <td class="px-3 py-2 whitespace-nowrap">{r.lastInsertedRelative}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

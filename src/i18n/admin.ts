@@ -53,6 +53,32 @@ export const AdminDictSchema = z.object({
   "sources.btn.enable": z.string(),
   "sources.btn.disable": z.string(),
   "sources.btn.tooltip": z.string(),
+
+  // Ingest telemetry section (data-sources-strategy)
+  "ingest.heading": z.string(),
+
+  "ingest.runs.heading": z.string(),
+  "ingest.runs.caption": z.string(),
+  "ingest.runs.col.runId": z.string(),
+  "ingest.runs.col.sources": z.string(),
+  "ingest.runs.col.rows": z.string(),
+  "ingest.runs.col.gens": z.string(),
+  "ingest.runs.col.observations": z.string(),
+  "ingest.runs.col.lastInserted": z.string(),
+  "ingest.runs.row.empty": z.string(),
+
+  "ingest.sources.heading": z.string(),
+  "ingest.sources.caption": z.string(),
+  "ingest.sources.col.slug": z.string(),
+  "ingest.sources.col.total": z.string(),
+  "ingest.sources.col.rows24h": z.string(),
+  "ingest.sources.col.rows7d": z.string(),
+  "ingest.sources.col.lastInsert": z.string(),
+  "ingest.sources.col.status": z.string(),
+  "ingest.sources.status.ok": z.string(),
+  "ingest.sources.status.stale": z.string(),
+  "ingest.sources.status.seed": z.string(),
+  "ingest.sources.row.empty": z.string(),
 });
 
 export type AdminDict = z.infer<typeof AdminDictSchema>;
@@ -103,6 +129,33 @@ export const adminEs: AdminDict = AdminDictSchema.parse({
   "sources.btn.enable": "Activar",
   "sources.btn.disable": "Desactivar",
   "sources.btn.tooltip": "Deshabilitado hasta F2 auth",
+
+  // Ingest telemetry section (data-sources-strategy)
+  "ingest.heading": "Ingest de precios",
+
+  "ingest.runs.heading": "Runs recientes",
+  "ingest.runs.caption": "Últimas 20 ejecuciones del cron de ingest",
+  "ingest.runs.col.runId": "Run ID",
+  "ingest.runs.col.sources": "Fuentes",
+  "ingest.runs.col.rows": "Filas",
+  "ingest.runs.col.gens": "Gens",
+  "ingest.runs.col.observations": "Observaciones",
+  "ingest.runs.col.lastInserted": "Último insert",
+  "ingest.runs.row.empty":
+    "Aún no hay runs de ingest — el cron se activa cuando llenás los IDs de Apify en src/lib/ingest/targets.ts",
+
+  "ingest.sources.heading": "Salud por fuente",
+  "ingest.sources.caption": "Filas producidas por fuente",
+  "ingest.sources.col.slug": "Fuente",
+  "ingest.sources.col.total": "Total",
+  "ingest.sources.col.rows24h": "24 h",
+  "ingest.sources.col.rows7d": "7 días",
+  "ingest.sources.col.lastInsert": "Último insert",
+  "ingest.sources.col.status": "Estado",
+  "ingest.sources.status.ok": "OK",
+  "ingest.sources.status.stale": "Stale >24h",
+  "ingest.sources.status.seed": "Seed (referencia)",
+  "ingest.sources.row.empty": "Sin fuentes activas",
 });
 
 export function adminT(key: keyof AdminDict): string {

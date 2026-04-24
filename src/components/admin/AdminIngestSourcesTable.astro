@@ -1,0 +1,82 @@
+---
+import { adminT } from "@/i18n/admin";
+import type { IngestSourceHealth } from "@/lib/admin-ingest-format";
+
+export interface Props {
+  rows: IngestSourceHealth[];
+}
+
+const { rows } = Astro.props;
+
+/** Pick a CSS class tuple for the status chip based on source state. */
+function statusChipClass(h: IngestSourceHealth): string {
+  if (h.sourceSlug === "seed") {
+    // Seed is reference data — neutral styling.
+    return "border-[var(--color-muted)] text-[var(--color-muted)]";
+  }
+  if (h.isStale) {
+    // Amber: stale non-seed source (last insert > 24 h ago).
+    return "border-amber-500 text-amber-400";
+  }
+  return "border-[var(--color-accent)] text-[var(--color-accent)]";
+}
+
+function statusLabel(h: IngestSourceHealth): string {
+  if (h.sourceSlug === "seed") return adminT("ingest.sources.status.seed");
+  if (h.isStale) return adminT("ingest.sources.status.stale");
+  return adminT("ingest.sources.status.ok");
+}
+---
+
+<section id="ingest-sources" aria-labelledby="ingest-sources-heading">
+  <h3 id="ingest-sources-heading" class="mb-3 text-lg font-semibold">
+    {adminT("ingest.sources.heading")}
+  </h3>
+  <div class="overflow-x-auto rounded-[var(--radius)] border border-[var(--color-border)]">
+    <table class="min-w-full text-sm">
+      <caption class="sr-only">{adminT("ingest.sources.caption")}</caption>
+      <thead class="bg-[var(--color-card)] text-xs uppercase text-[var(--color-muted)]">
+        <tr>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("ingest.sources.col.slug")}</th>
+          <th scope="col" class="px-3 py-2 text-right">{adminT("ingest.sources.col.total")}</th>
+          <th scope="col" class="px-3 py-2 text-right">{adminT("ingest.sources.col.rows24h")}</th>
+          <th scope="col" class="px-3 py-2 text-right">{adminT("ingest.sources.col.rows7d")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("ingest.sources.col.lastInsert")}</th>
+          <th scope="col" class="px-3 py-2 text-left">{adminT("ingest.sources.col.status")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.length === 0 && (
+            <tr>
+              <td
+                colspan="6"
+                class="px-3 py-4 text-center text-[var(--color-muted)]"
+              >
+                {adminT("ingest.sources.row.empty")}
+              </td>
+            </tr>
+          )
+        }
+        {
+          rows.map((h) => (
+            <tr class="border-t border-[var(--color-border)]">
+              <td class="px-3 py-2 font-mono text-xs">{h.sourceSlug}</td>
+              <td class="px-3 py-2 text-right tabular-nums">{h.totalRows}</td>
+              <td class="px-3 py-2 text-right tabular-nums">{h.rows24h}</td>
+              <td class="px-3 py-2 text-right tabular-nums">{h.rows7d}</td>
+              <td class="px-3 py-2 whitespace-nowrap">{h.lastInsertRelative}</td>
+              <td class="px-3 py-2">
+                <span
+                  class={`inline-flex items-center rounded border px-2 py-0.5 text-xs ${statusChipClass(h)}`}
+                >
+                  {statusLabel(h)}
+                </span>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

@@ -15,10 +15,19 @@ export const prerender = false;
 
 import AdminBanner from "@/components/admin/AdminBanner.astro";
 import AdminErrorsTable from "@/components/admin/AdminErrorsTable.astro";
+import AdminIngestRunsTable from "@/components/admin/AdminIngestRunsTable.astro";
+import AdminIngestSourcesTable from "@/components/admin/AdminIngestSourcesTable.astro";
 import AdminRunsTable from "@/components/admin/AdminRunsTable.astro";
 import AdminSourcesTable from "@/components/admin/AdminSourcesTable.astro";
 import { adminT } from "@/i18n/admin";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import {
+  type IngestRunSummary,
+  type IngestSourceHealth,
+  type IngestedPricePointRow,
+  aggregateIngestRuns,
+  aggregateIngestSources,
+} from "@/lib/admin-ingest-format";
 import {
   type FormattedErrorRow,
   type ScrapeErrorRow,
@@ -72,33 +81,46 @@ type RunRow = ScrapeRunRow & { source_slug: string };
 let runs: RunRow[] = [];
 let errors: FormattedErrorRow[] = [];
 let sources: SourceHealth[] = [];
+let ingestRuns: IngestRunSummary[] = [];
+let ingestSources: IngestSourceHealth[] = [];
 let degraded = false;
 
 if (supabaseAdmin == null) {
   degraded = true;
 } else {
-  const [runsRes, errorsRes, sourcesRes, recentRunsRes] = await Promise.allSettled([
-    supabaseAdmin
-      .from("scrape_runs")
-      .select(
-        "id, source_id, started_at, finished_at, duration_ms, items_found, items_new, items_updated, items_errored, sources!inner(slug, display_name)"
-      )
-      .order("started_at", { ascending: false })
-      .limit(20),
-    supabaseAdmin
-      .from("scrape_errors")
-      .select(
-        "id, run_id, url, error_type, message, occurred_at, scrape_runs!inner(source_id, sources!inner(slug))"
-      )
-      .order("occurred_at", { ascending: false })
-      .limit(20),
-    supabaseAdmin.from("sources").select("*").order("slug", { ascending: true }),
-    supabaseAdmin
-      .from("scrape_runs")
-      .select("source_id, started_at, items_errored")
-      .order("started_at", { ascending: false })
-      .limit(200),
-  ]);
+  const [runsRes, errorsRes, sourcesRes, recentRunsRes, ingestPointsRes] = await Promise.allSettled(
+    [
+      supabaseAdmin
+        .from("scrape_runs")
+        .select(
+          "id, source_id, started_at, finished_at, duration_ms, items_found, items_new, items_updated, items_errored, sources!inner(slug, display_name)"
+        )
+        .order("started_at", { ascending: false })
+        .limit(20),
+      supabaseAdmin
+        .from("scrape_errors")
+        .select(
+          "id, run_id, url, error_type, message, occurred_at, scrape_runs!inner(source_id, sources!inner(slug))"
+        )
+        .order("occurred_at", { ascending: false })
+        .limit(20),
+      supabaseAdmin.from("sources").select("*").order("slug", { ascending: true }),
+      supabaseAdmin
+        .from("scrape_runs")
+        .select("source_id, started_at, items_errored")
+        .order("started_at", { ascending: false })
+        .limit(200),
+      // Pull the last 2000 rows from the ingest staging table for telemetry.
+      // Ordered by created_at desc so the most recent rows are processed first.
+      supabaseAdmin
+        .from("ingested_price_points")
+        .select(
+          "id, source_slug, gen_slug, generation_id, model_id, make_id, external_id, year, km, price, currency, observed_at, ingest_run_id, created_at"
+        )
+        .order("created_at", { ascending: false })
+        .limit(2000),
+    ]
+  );
 
   if (runsRes.status === "fulfilled" && !runsRes.value.error && runsRes.value.data) {
     const rows = runsRes.value.data as unknown as RunWithSource[];
@@ -140,6 +162,19 @@ if (supabaseAdmin == null) {
   } else {
     degraded = true;
   }
+
+  // Ingest telemetry — non-fatal: a failure here does not set `degraded`
+  // (the table may not exist yet on environments that haven't run the migration).
+  if (
+    ingestPointsRes.status === "fulfilled" &&
+    !ingestPointsRes.value.error &&
+    ingestPointsRes.value.data
+  ) {
+    const pts = ingestPointsRes.value.data as IngestedPricePointRow[];
+    ingestRuns = aggregateIngestRuns(pts, now);
+    ingestSources = aggregateIngestSources(pts, now);
+  }
+  // On failure, both arrays remain empty — tables render the empty-state row.
 }
 
 const refreshed = formatRelative(now.toISOString(), now);
@@ -170,5 +205,15 @@ const refreshed = formatRelative(now.toISOString(), now);
     <AdminRunsTable rows={runs} />
     <AdminErrorsTable rows={errors} />
     <AdminSourcesTable rows={sources} />
+
+    <section id="ingest" aria-labelledby="ingest-heading">
+      <h2 id="ingest-heading" class="mb-4 text-xl font-semibold border-t border-[var(--color-border)] pt-6">
+        {adminT("ingest.heading")}
+      </h2>
+      <div class="space-y-6">
+        <AdminIngestRunsTable rows={ingestRuns} />
+        <AdminIngestSourcesTable rows={ingestSources} />
+      </div>
+    </section>
   </main>
 </BaseLayout>
