@@ -30,17 +30,35 @@ if (Astro.request.method === "POST") {
     const password = (form.get("password") as string | null) ?? "";
     const displayName = (form.get("display_name") as string | null)?.trim() ?? null;
 
+    // emailRedirectTo overrides Supabase's Site URL default (which ships as
+    // http://localhost:3000 until the dashboard is configured). The URL must
+    // also be added to the dashboard's Redirect URLs allowlist — we use **
+    // so it accepts every Jinba path.
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: displayName ? { data: { display_name: displayName } } : undefined,
+      options: {
+        data: displayName ? { display_name: displayName } : undefined,
+        emailRedirectTo: `${Astro.url.origin}/${locale}/auth/callback`,
+      },
     });
 
     if (!error) {
       return Astro.redirect(`/${locale}/auth/login?check_email=1`);
     }
 
-    errorMsg = tr("auth.login.error_generic");
+    // Map Supabase error messages onto localised keys; fall back to the raw
+    // message so the user at least sees what Supabase said.
+    const msg = error.message.toLowerCase();
+    if (msg.includes("already registered") || msg.includes("already exists")) {
+      errorMsg = tr("auth.signup.error_exists");
+    } else if (msg.includes("weak password") || msg.includes("should be at least")) {
+      errorMsg = tr("auth.signup.error_weak_password");
+    } else if (msg.includes("rate limit") || msg.includes("too many")) {
+      errorMsg = tr("auth.signup.error_rate_limit");
+    } else {
+      errorMsg = tr("auth.signup.error_generic");
+    }
   }
 }
 
