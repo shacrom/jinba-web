@@ -47,6 +47,24 @@ const severityClasses: Record<SeverityKey, string> = {
             <td class="px-4 py-3">
               <p class="font-medium">{fault.description}</p>
               <p class="mt-0.5 text-xs text-[var(--color-muted)]">{fault.frequency}</p>
+              {
+                fault.applies_to && fault.applies_to.length > 0 && (
+                  <p class="mt-1.5 flex flex-wrap items-center gap-1 text-[10px] uppercase tracking-widest text-[var(--color-muted)]">
+                    <span class="opacity-70">Aplica a:</span>
+                    {fault.applies_to_label ? (
+                      <span class="rounded border border-[var(--color-border)] px-1.5 py-0.5 font-mono text-[10px] normal-case text-[var(--color-fg)]">
+                        {fault.applies_to_label}
+                      </span>
+                    ) : (
+                      fault.applies_to.map((code) => (
+                        <span class="rounded border border-[var(--color-border)] px-1.5 py-0.5 font-mono text-[10px] normal-case text-[var(--color-fg)]">
+                          {code}
+                        </span>
+                      ))
+                    )}
+                  </p>
+                )
+              }
             </td>
             <td class="px-4 py-3">
               <span

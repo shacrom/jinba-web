@@ -19,6 +19,9 @@ export interface FaultEntry {
   cost_eur_max: number;
   frequency: string;
   description: string;
+  /** Engine codes or trim slugs this fault applies to. Empty = whole gen. */
+  applies_to?: string[];
+  applies_to_label?: string;
 }
 
 /** Shape of a single mod entry (maps to modelMods collection schema data) */
@@ -28,6 +31,9 @@ export interface ModEntry {
   cost_eur_min: number;
   cost_eur_max: number;
   description: string;
+  /** Engine codes or trim slugs this mod applies to. Empty = whole gen. */
+  applies_to?: string[];
+  applies_to_label?: string;
 }
 
 /** A trim row as resolved for display in SpecBand */

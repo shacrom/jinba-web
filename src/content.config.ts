@@ -110,7 +110,10 @@ const services = defineCollection({
   }),
 });
 
-// T02: modelFaults collection — one file per fault, per gen, per locale
+// T02: modelFaults collection — one file per fault, per gen, per locale.
+// `applies_to` is an optional list of engine codes (CDLA, BKD, BXE, ...) or
+// trim slugs that this fault applies to. Empty or missing = applies to the
+// whole generation.
 const modelFaults = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/model-faults" }),
   schema: z.object({
@@ -123,10 +126,14 @@ const modelFaults = defineCollection({
     cost_eur_max: z.number().int().min(0),
     frequency: z.string(),
     description: z.string(),
+    /** Engine codes or trim slugs this fault applies to. Empty = whole gen. */
+    applies_to: z.array(z.string()).default([]),
+    /** Optional short human label rendered next to the engine badge ("1.9 TDI PD"). */
+    applies_to_label: z.string().optional(),
   }),
 });
 
-// T03: modelMods collection — one file per mod, per gen, per locale
+// T03: modelMods collection — same trim-scoping optional fields.
 const modelMods = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/model-mods" }),
   schema: z.object({
@@ -139,6 +146,9 @@ const modelMods = defineCollection({
     cost_eur_min: z.number().int().min(0),
     cost_eur_max: z.number().int().min(0),
     description: z.string(),
+    /** Engine codes or trim slugs this mod applies to. Empty = whole gen. */
+    applies_to: z.array(z.string()).default([]),
+    applies_to_label: z.string().optional(),
   }),
 });
 

@@ -39,6 +39,22 @@ const legalityClasses: Record<LegalityKey, string> = {
           </span>
         </div>
         <p class="text-sm leading-relaxed text-[var(--color-fg)]">{mod.description}</p>
+        {mod.applies_to && mod.applies_to.length > 0 && (
+          <p class="mt-2 flex flex-wrap items-center gap-1 text-[10px] uppercase tracking-widest text-[var(--color-muted)]">
+            <span class="opacity-70">Aplica a:</span>
+            {mod.applies_to_label ? (
+              <span class="rounded border border-[var(--color-border)] px-1.5 py-0.5 font-mono text-[10px] normal-case text-[var(--color-fg)]">
+                {mod.applies_to_label}
+              </span>
+            ) : (
+              mod.applies_to.map((code) => (
+                <span class="rounded border border-[var(--color-border)] px-1.5 py-0.5 font-mono text-[10px] normal-case text-[var(--color-fg)]">
+                  {code}
+                </span>
+              ))
+            )}
+          </p>
+        )}
         {(mod.cost_eur_min > 0 || mod.cost_eur_max > 0) && (
           <p class="mt-2 font-mono text-xs text-[var(--color-muted)]">
             {mod.cost_eur_min}–{mod.cost_eur_max} €
