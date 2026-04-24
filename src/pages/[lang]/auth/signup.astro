@@ -1,0 +1,126 @@
+---
+/**
+ * src/pages/[lang]/auth/signup.astro — F2 Batch 3
+ * Email + password + optional display_name registration.
+ * POST calls signUp; on success redirects to login with banner.
+ */
+export const prerender = false;
+
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+const lang = Astro.params.lang as string;
+if (lang !== "es" && lang !== "en") {
+  return Astro.redirect("/404");
+}
+const locale = lang as Locale;
+const tr = t(locale);
+
+let errorMsg: string | null = null;
+
+if (Astro.request.method === "POST") {
+  const supabase = Astro.locals.supabase;
+  if (!supabase) {
+    errorMsg = tr("auth.login.error_generic");
+  } else {
+    const form = await Astro.request.formData();
+    const email = (form.get("email") as string | null)?.trim() ?? "";
+    const password = (form.get("password") as string | null) ?? "";
+    const displayName = (form.get("display_name") as string | null)?.trim() ?? null;
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: displayName ? { data: { display_name: displayName } } : undefined,
+    });
+
+    if (!error) {
+      return Astro.redirect(`/${locale}/auth/login?check_email=1`);
+    }
+
+    errorMsg = tr("auth.login.error_generic");
+  }
+}
+
+const checkEmail = Astro.url.searchParams.get("check_email") === "1";
+const path = `/${locale}/auth/signup`;
+---
+
+<BaseLayout title={tr("auth.signup.title") + " | Jinba"} description={tr("auth.signup.title")} locale={locale} path={path} noindex>
+  <HomeNav locale={locale} />
+  <main class="mx-auto max-w-md px-4 py-16">
+    <h1 class="mb-8 text-2xl font-bold">{tr("auth.signup.title")}</h1>
+
+    {checkEmail && (
+      <div role="status" class="mb-6 rounded border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+        {tr("auth.signup.check_email")}
+      </div>
+    )}
+
+    {errorMsg && (
+      <div role="alert" class="mb-6 rounded border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        {errorMsg}
+      </div>
+    )}
+
+    <form method="POST" class="space-y-5">
+      <div class="flex flex-col gap-1.5">
+        <label for="display_name" class="text-sm font-medium text-[var(--color-fg)]">
+          {tr("auth.signup.display_name")}
+        </label>
+        <input
+          id="display_name"
+          name="display_name"
+          type="text"
+          autocomplete="name"
+          class="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--color-fg)] placeholder:text-[var(--color-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+        />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="email" class="text-sm font-medium text-[var(--color-fg)]">
+          {tr("auth.login.email")}
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autocomplete="email"
+          class="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--color-fg)] placeholder:text-[var(--color-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+        />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="password" class="text-sm font-medium text-[var(--color-fg)]">
+          {tr("auth.login.password")}
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          minlength="8"
+          autocomplete="new-password"
+          class="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--color-fg)] placeholder:text-[var(--color-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+        />
+      </div>
+
+      <button
+        type="submit"
+        class="w-full rounded-[var(--radius)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent-fg)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+      >
+        {tr("auth.signup.submit")}
+      </button>
+    </form>
+
+    <p class="mt-6 text-center text-sm text-[var(--color-muted)]">
+      {tr("auth.signup.has_account")}{" "}
+      <a href={`/${locale}/auth/login`} class="text-[var(--color-fg)] underline hover:opacity-80">
+        {tr("auth.signup.link_login")}
+      </a>
+    </p>
+  </main>
+</BaseLayout>

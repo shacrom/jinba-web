@@ -1,0 +1,24 @@
+---
+/**
+ * src/pages/[lang]/auth/callback.astro — F2 Batch 3
+ * OAuth / email-confirm callback handler.
+ * Reads `code` from query, exchanges via exchangeCodeForSession, then redirects home.
+ */
+export const prerender = false;
+
+const lang = Astro.params.lang as string;
+if (lang !== "es" && lang !== "en") {
+  return Astro.redirect("/404");
+}
+
+const code = Astro.url.searchParams.get("code");
+
+if (code) {
+  const supabase = Astro.locals.supabase;
+  if (supabase) {
+    await supabase.auth.exchangeCodeForSession(code);
+  }
+}
+
+return Astro.redirect(`/${lang}/account/`);
+---

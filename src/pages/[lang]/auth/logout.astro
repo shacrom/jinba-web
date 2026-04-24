@@ -1,0 +1,53 @@
+---
+/**
+ * src/pages/[lang]/auth/logout.astro — F2 Batch 3
+ * POST-only route: clears session and redirects home.
+ * GET: shows a small confirmation page with a POST form so links work.
+ */
+export const prerender = false;
+
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+const lang = Astro.params.lang as string;
+if (lang !== "es" && lang !== "en") {
+  return Astro.redirect("/404");
+}
+const locale = lang as Locale;
+const tr = t(locale);
+
+if (Astro.request.method === "POST") {
+  const supabase = Astro.locals.supabase;
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
+  return Astro.redirect(`/${locale}/`);
+}
+
+const path = `/${locale}/auth/logout`;
+---
+
+<BaseLayout title={tr("auth.logout.title") + " | Jinba"} description={tr("auth.logout.title")} locale={locale} path={path} noindex>
+  <HomeNav locale={locale} />
+  <main class="mx-auto max-w-md px-4 py-16 text-center">
+    <h1 class="mb-6 text-2xl font-bold">{tr("auth.logout.title")}</h1>
+    <p class="mb-8 text-[var(--color-muted)]">{tr("auth.logout.confirm")}</p>
+
+    <form method="POST" class="inline-block">
+      <button
+        type="submit"
+        class="rounded bg-[var(--color-accent)] px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
+      >
+        {tr("auth.logout.submit")}
+      </button>
+    </form>
+
+    <p class="mt-6">
+      <a href={`/${locale}/account/`} class="text-sm text-[var(--color-muted)] underline hover:text-[var(--color-fg)]">
+        {locale === "es" ? "Volver a mi cuenta" : "Back to my account"}
+      </a>
+    </p>
+  </main>
+</BaseLayout>
