@@ -255,3 +255,71 @@ describe("parseFichaTecnica", () => {
     expect(parseFichaTecnica(rawDE).combustible).toBe("DIÉSEL");
   });
 });
+
+// ── Spanish ficha técnica shape (SEAT León 2002, 1.6 5V) ──────────────────
+// The older SEAT / MAPFRE-issued ficha técnica uses different field labels
+// than the fresher DGT permit — our parser must handle both shapes.
+
+describe("parseFichaTecnica — Spanish-style ficha (SEAT León 1M 2002)", () => {
+  const RAW = [
+    "SEAT",
+    "Nº SERIE 26020350 8",
+    "MATRÍCULA",
+    "Nombre de identificación VSSZZZ1MZ2R080355",
+    "Clasificación del vehículo PEA4Z7C",
+    "Nº CERTIFICADO 020320160",
+    "1000 TURISMO",
+    "Marca: SEAT Clase:",
+    "Tipo: 1M Altura total (mm): 1439",
+    "Variante: ABAZDX01/FM5 Anchura total (mm): 1742",
+    "Denominación comercial: LEON 1.6 5V Vía exterior/posterior (mm): 1513/1494",
+    "Tara (kg): 1197 Longitud total (mm): 4193",
+    "MTM/MMA 1ª Eje (kg): 1717 Distancia eje 1º/2º (mm): 790",
+    "MTM/MMA 2ª Eje (kg): 800 Distancia eje 2º/3º (mm): 2511",
+    "MMR S/F s/F (kg): 600/1200 Motor Marca: VOLKSWAGEN",
+    "Neumáticos: 195/65 R15 91V Nº Cilindros/Cilindrada cm³: 4/1598",
+    "Potencia fiscal/real (CV kW): 11.64/77",
+    "Barcelona, 01 de febrero de 2002",
+  ].join("\n");
+
+  const parsed = parseFichaTecnica(RAW);
+
+  it("extracts the vehicle marca SEAT, not the Motor Marca VOLKSWAGEN", () => {
+    expect(parsed.marca).toBe("SEAT");
+  });
+
+  it("falls back to Denominación comercial when Modelo: is absent", () => {
+    expect(parsed.modelo).toMatch(/LEON\s+1\.6\s+5V/i);
+  });
+
+  it("extracts variante", () => {
+    expect(parsed.variante).toMatch(/ABAZDX01\/FM5/);
+  });
+
+  it("extracts year from the Spanish long-form date (Barcelona, 01 de febrero de 2002)", () => {
+    expect(parsed.ano).toBe(2002);
+  });
+
+  it("extracts kW from the 'Potencia fiscal/real (CV kW): 11.64/77' format", () => {
+    expect(parsed.potenciaKw).toBe(77);
+  });
+
+  it("extracts cilindrada from the 'Nº Cilindros/Cilindrada cm³: 4/1598' combined format", () => {
+    expect(parsed.cilindrada).toBe(1598);
+  });
+
+  it("drops the Nº SERIE (engine serial) from surviving lines", () => {
+    const safe = filterPiiLines(RAW);
+    expect(safe.some((l) => /26020350/.test(l))).toBe(false);
+  });
+
+  it("drops the Nº de identificación (VIN) from surviving lines", () => {
+    const safe = filterPiiLines(RAW);
+    expect(safe.some((l) => /VSSZZZ1MZ2R080355/.test(l))).toBe(false);
+  });
+
+  it("drops the Nº CERTIFICADO from surviving lines", () => {
+    const safe = filterPiiLines(RAW);
+    expect(safe.some((l) => /020320160/.test(l))).toBe(false);
+  });
+});

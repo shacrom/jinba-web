@@ -34,9 +34,19 @@ const PII_PATTERNS: RegExp[] = [
   // Chassis / VIN — whole word to avoid false positives
   /\bBASTIDOR\b/i,
   /\bVIN\b/i,
-  // National ID document references
+  // Engine serial number (bloc motor) — is indirectly tied to the owner
+  // via the insurance records and vehicle log.
+  /N\.?º\s*(?:DE\s*)?SERIE/i,
+  /N[UÚ]MERO\s*(?:DE\s*)?SERIE/i,
+  // Vehicle certificate number (certificate of conformity — links to owner)
+  /N\.?º\s*(?:DE\s*)?CERTIFICADO/i,
+  /N[UÚ]MERO\s*(?:DE\s*)?CERTIFICADO/i,
+  // National ID document references — any "de identificación" label
+  // (the vehicle-series "Nº de identificación" plus the owner-focused
+  // "Nombre de identificación" that appears on older SEAT fichas).
   /N\.?º\s*DE\s*IDENTIFICACI[OÓ]N/i,
   /N[UÚ]MERO\s*DE\s*IDENTIFICACI[OÓ]N/i,
+  /NOMBRE\s+DE\s+IDENTIFICACI[OÓ]N/i,
   /\bTITULAR\b/i,
   /\bAPELLIDOS\b/i,
   /\bDNI\b/i,
@@ -88,16 +98,58 @@ export interface ParsedFicha {
 
 // ── Field Regexes ────────────────────────────────────────────────────────────
 
-const RE_MARCA = /MARCA[:\s]+([A-Z0-9\-ÁÉÍÓÚÑÜÀÈÌÒÙÂÊÎÔÛÄËÏÖÜ\s]+?)(?:\s*[\n\r]|$)/i;
-const RE_MODELO = /MODELO[:\s]+([^\n\r]+)/i;
+/** "Next label" lookahead — ends the capture when a Spanish Title-Case word
+ *  (uppercase + lowercase) appears after whitespace. Works for inline ficha
+ *  técnica layouts where multiple labels share a line: "Marca: SEAT Clase:"
+ *  stops "SEAT" before "Clase"; "LEON 1.6 5V Vía..." stops at "Vía". */
+const NEXT_LABEL_LOOKAHEAD = /(?=\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñí]|[\n\r]|$)/u.source;
+
+const RE_MARCA = new RegExp(`MARCA[:\\s]+(.+?)${NEXT_LABEL_LOOKAHEAD}`, "i");
+const RE_MODELO = new RegExp(`MODELO[:\\s]+(.+?)${NEXT_LABEL_LOOKAHEAD}`, "i");
+/** Fallback for fichas técnicas that use "Denominación comercial" instead of "Modelo". */
+const RE_DENOMINACION = new RegExp(
+  `DENOMINACI[ÓO]N\\s*COMERCIAL[:\\s]+(.+?)${NEXT_LABEL_LOOKAHEAD}`,
+  "i"
+);
 const RE_VARIANTE = /VARIANTE[:\s]+([^\n\r]+)/i;
 const RE_VERSION = /VERSI[ÓO]N[:\s]+([^\n\r]+)/i;
 const RE_YEAR =
   /(?:PRIMERA\s+MATRICULACI[ÓO]N|A[ÑN]O\s+MATRIC)[:\s]+(\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4}|\d{4})/i;
+/** Matches the Spanish long-form date "01 de febrero de 2002" that often sits next to the
+ *  certificate issue place (e.g. "Barcelona, 01 de febrero de 2002"). Captures the year. */
+const RE_YEAR_SPANISH =
+  /\d{1,2}\s+de\s+(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\s+de\s+(\d{4})/i;
 const RE_POWER = /POTENCIA[:\s]+(\d+(?:[,\.]\d+)?)\s*(kW|CV|HP)/i;
+/** Newer fichas use "Potencia fiscal/real (CV kW): 11.64/77" — two numbers separated by "/",
+ *  where the second is the kW figure. Capture it directly. */
+const RE_POWER_FISCAL =
+  /POTENCIA[^\n]*(?:fiscal|real)[^\n]*(?:CV|kW)[^\n]*[:\s]+([\d.,]+)\s*\/\s*(\d+)/i;
 const RE_DISPLACEMENT = /CILINDRADA[:\s]+(\d{3,5})\s*(cc|cm3|CM3|cm³)/i;
+/** Combined "Nº Cilindros/Cilindrada cm³: 4/1598" field — capture the cc value (after the slash). */
+const RE_DISPLACEMENT_COMBINED =
+  /CILINDROS[^\n]*CILINDRADA[^\n]*(?:cm[³3]|cc)[^\n]*[:\s]+\d+\s*\/\s*(\d{3,5})/i;
 const RE_FUEL = /COMBUSTIBLE[:\s]+(GASOLINA|DIESEL|DI[ÉE]SEL|GLP|GAS|EL[ÉE]CTRICO|H[ÍI]BRIDO)/i;
 const RE_HOMOLOGATION = /(?:TIPO|HOMOLOGACI[ÓO]N)[:\s\-]+([A-Z0-9\-\/\*]+)/i;
+
+/** Spanish month name → month number (not currently needed for extraction, but documented
+ *  here so anyone extending RE_YEAR_SPANISH knows the accepted set). */
+const SPANISH_MONTHS: Record<string, number> = {
+  enero: 1,
+  febrero: 2,
+  marzo: 3,
+  abril: 4,
+  mayo: 5,
+  junio: 6,
+  julio: 7,
+  agosto: 8,
+  septiembre: 9,
+  setiembre: 9,
+  octubre: 10,
+  noviembre: 11,
+  diciembre: 12,
+};
+// Silence unused-const warning — kept for docs / future extension.
+void SPANISH_MONTHS;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -160,37 +212,59 @@ export function parseFichaTecnica(rawText: string): ParsedFicha {
   // STEP 1 — PII filter (MUST run before any field extraction)
   const safeLines = filterPiiLines(rawText);
 
-  // STEP 2 — Field extraction on clean lines only
-  const marca = matchField(RE_MARCA, safeLines);
+  // STEP 2 — Field extraction on clean lines only.
+  //
+  // For "Marca" we exclude lines that describe the engine ("Motor Marca:
+  // VOLKSWAGEN" must not override "Marca: SEAT" for the vehicle itself).
+  const vehicleLines = safeLines.filter((l) => !/MOTOR\s+MARCA/i.test(l));
+  const marca = matchField(RE_MARCA, vehicleLines);
 
-  const modelo = matchField(RE_MODELO, safeLines);
+  // MODELO first; fall back to DENOMINACIÓN COMERCIAL (used in older SEAT /
+  // Spanish fichas técnicas where the canonical field label is different).
+  const modelo = matchField(RE_MODELO, safeLines) ?? matchField(RE_DENOMINACION, safeLines);
 
   // VARIANTE or VERSIÓN (pick first non-null)
   const variante = matchField(RE_VARIANTE, safeLines) ?? matchField(RE_VERSION, safeLines);
 
-  // Year
+  // Year — try the labelled fields first, then fall back to Spanish
+  // long-form date (e.g. "Barcelona, 01 de febrero de 2002").
   const rawYear = matchField(RE_YEAR, safeLines);
-  const ano = rawYear ? extractYear(rawYear) : null;
+  const spanishYear = !rawYear ? matchField(RE_YEAR_SPANISH, safeLines) : null;
+  const ano = rawYear ? extractYear(rawYear) : spanishYear ? extractYear(spanishYear) : null;
 
-  // Power
+  // Power — combined "fiscal/real" format first (newer fichas), then the
+  // simple POTENCIA: <n> <unit> form.
   let potenciaKw: number | null = null;
   for (const line of safeLines) {
-    const m = line.match(RE_POWER);
-    if (m) {
-      const value = Number.parseFloat(m[1].replace(",", "."));
+    const combined = line.match(RE_POWER_FISCAL);
+    if (combined) {
+      const kw = Number.parseInt(combined[2], 10);
+      if (!Number.isNaN(kw)) potenciaKw = kw;
+      break;
+    }
+    const simple = line.match(RE_POWER);
+    if (simple) {
+      const value = Number.parseFloat(simple[1].replace(",", "."));
       if (!Number.isNaN(value)) {
-        potenciaKw = normaliseToKw(value, m[2]);
+        potenciaKw = normaliseToKw(value, simple[2]);
       }
       break;
     }
   }
 
-  // Displacement
+  // Displacement — try combined "Cilindros/Cilindrada: 4/1598 cm³" first,
+  // then the simple "CILINDRADA: 1598 cc" form.
   let cilindrada: number | null = null;
   for (const line of safeLines) {
-    const m = line.match(RE_DISPLACEMENT);
-    if (m) {
-      const v = Number.parseInt(m[1], 10);
+    const combined = line.match(RE_DISPLACEMENT_COMBINED);
+    if (combined) {
+      const v = Number.parseInt(combined[1], 10);
+      if (!Number.isNaN(v)) cilindrada = v;
+      break;
+    }
+    const simple = line.match(RE_DISPLACEMENT);
+    if (simple) {
+      const v = Number.parseInt(simple[1], 10);
       if (!Number.isNaN(v)) cilindrada = v;
       break;
     }
