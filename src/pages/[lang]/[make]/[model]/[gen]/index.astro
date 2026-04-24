@@ -8,6 +8,7 @@ import { getCollection, render } from "astro:content";
  * M4 (T09): compact price-history chart rendered after LivePriceStats.
  */
 import HomeNav from "@/components/home/HomeNav.astro";
+import UserActionsIsland from "@/components/islands/UserActionsIsland.tsx";
 import CommonFaultsTable from "@/components/model/CommonFaultsTable.astro";
 import LivePriceStats from "@/components/model/LivePriceStats.astro";
 import ModelFooter from "@/components/model/ModelFooter.astro";
@@ -434,6 +435,22 @@ const ogImage =
 
     {/* Spec band */}
     <SpecBand trims={trims} locale={lang} />
+
+    {/* User actions: sign-in / garage / watchlist — F2 */}
+    <div class="mt-4">
+      <UserActionsIsland
+        client:idle
+        generationId={g.id}
+        locale={lang}
+        labels={{
+          signInPrompt: tr("model.actions.sign_in_prompt"),
+          addGarage: tr("model.actions.add_garage"),
+          inGarage: tr("model.actions.in_garage"),
+          watch: tr("model.actions.watch"),
+          watching: tr("model.actions.watching"),
+        }}
+      />
+    </div>
 
     {/* Two-column layout: TOC sidebar (lg) + article */}
     <div class="mt-8 grid gap-8 lg:grid-cols-[18rem_minmax(0,1fr)]">

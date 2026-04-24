@@ -1,0 +1,125 @@
+---
+/**
+ * src/pages/[lang]/account/watchlist/[id]/edit.astro — F2 Batch 5
+ * Edit a watchlist entry's target price and notes.
+ */
+export const prerender = false;
+
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { requireAuth } from "@/lib/auth";
+
+const lang = Astro.params.lang as string;
+if (lang !== "es" && lang !== "en") {
+  return Astro.redirect("/404");
+}
+const locale = lang as Locale;
+const tr = t(locale);
+
+const entryId = Number.parseInt(Astro.params.id as string, 10);
+if (!entryId) return Astro.redirect(`/${locale}/account/watchlist`);
+
+const result = await requireAuth(Astro);
+if (result instanceof Response) return result;
+const { user } = result;
+
+// supabase is guaranteed by requireAuth having succeeded above
+// biome-ignore lint/style/noNonNullAssertion: requireAuth ensures supabase is defined
+const supabase = Astro.locals.supabase!;
+
+const { data: entry } = await supabase
+  .from("user_watchlist")
+  .select(
+    "id, target_price_eur, notes, generation_id, generations!inner(name_es, name_en, models!inner(name_es, name_en, makes!inner(name_es, name_en)))"
+  )
+  .eq("id", entryId)
+  .eq("user_id", user.id)
+  .maybeSingle();
+
+if (!entry) return Astro.redirect(`/${locale}/account/watchlist`);
+
+const gen = entry.generations as unknown as {
+  name_es: string;
+  name_en: string;
+  models: { name_es: string; name_en: string; makes: { name_es: string; name_en: string } };
+};
+const genName = locale === "es" ? gen.name_es : gen.name_en;
+const modelName = locale === "es" ? gen.models.name_es : gen.models.name_en;
+const makeName = locale === "es" ? gen.models.makes.name_es : gen.models.makes.name_en;
+const fullLabel = `${makeName} ${modelName} ${genName}`;
+
+let errorMsg: string | null = null;
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const targetPriceEur = form.get("target_price_eur")
+    ? Number.parseFloat(form.get("target_price_eur") as string)
+    : null;
+  const notes = (form.get("notes") as string | null)?.trim() || null;
+
+  const { error } = await supabase
+    .from("user_watchlist")
+    .update({ target_price_eur: targetPriceEur, notes })
+    .eq("id", entryId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    errorMsg = locale === "es" ? "No se pudo guardar." : "Could not save.";
+  } else {
+    return Astro.redirect(`/${locale}/account/watchlist`);
+  }
+}
+
+const inputClass =
+  "w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--color-fg)] placeholder:text-[var(--color-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]";
+
+const path = `/${locale}/account/watchlist/${entryId}/edit`;
+---
+
+<BaseLayout title={tr("watchlist.edit_title") + " | Jinba"} description={tr("watchlist.edit_title")} locale={locale} path={path} noindex>
+  <HomeNav locale={locale} />
+  <main class="mx-auto max-w-lg px-4 py-12">
+    <div class="mb-6">
+      <a href={`/${locale}/account/watchlist`} class="mb-1 block text-sm text-[var(--color-muted)] hover:text-[var(--color-fg)]">
+        &larr; {tr("watchlist.title")}
+      </a>
+      <h1 class="text-2xl font-bold">{tr("watchlist.edit_title")}</h1>
+      <p class="mt-1 text-sm text-[var(--color-muted)]">{fullLabel}</p>
+    </div>
+
+    {errorMsg && (
+      <div role="alert" class="mb-6 rounded border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        {errorMsg}
+      </div>
+    )}
+
+    <form method="POST" class="space-y-5">
+      <div class="flex flex-col gap-1.5">
+        <label for="target_price_eur" class="text-sm font-medium">{tr("watchlist.form.target_price")}</label>
+        <input
+          id="target_price_eur"
+          name="target_price_eur"
+          type="number"
+          min="0"
+          step="1"
+          value={entry.target_price_eur ?? ""}
+          class={inputClass}
+        />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="notes" class="text-sm font-medium">{tr("watchlist.form.notes")}</label>
+        <textarea id="notes" name="notes" rows="3" class={inputClass}>{entry.notes ?? ""}</textarea>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full rounded-[var(--radius)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent-fg)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+      >
+        {tr("watchlist.form.submit")}
+      </button>
+    </form>
+  </main>
+</BaseLayout>

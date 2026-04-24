@@ -1,0 +1,255 @@
+---
+/**
+ * src/pages/[lang]/account/watchlist.astro — F2 Batch 5
+ * Lists user's watched models with market stats and target price comparison.
+ */
+export const prerender = false;
+
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { requireAuth } from "@/lib/auth";
+
+const lang = Astro.params.lang as string;
+if (lang !== "es" && lang !== "en") {
+  return Astro.redirect("/404");
+}
+const locale = lang as Locale;
+const tr = t(locale);
+
+const result = await requireAuth(Astro);
+if (result instanceof Response) return result;
+const { user } = result;
+
+// supabase is guaranteed by requireAuth having succeeded above
+// biome-ignore lint/style/noNonNullAssertion: requireAuth ensures supabase is defined
+const supabase = Astro.locals.supabase!;
+
+// Fetch watchlist with nested generation + model + make names
+const { data: watchRaw } = await supabase
+  .from("user_watchlist")
+  .select(
+    "id, target_price_eur, notes, added_at, generation_id, generations!inner(name_es, name_en, slug, models!inner(name_es, name_en, slug, makes!inner(name_es, name_en, slug)))"
+  )
+  .eq("user_id", user.id)
+  .order("added_at", { ascending: false });
+
+const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+type WatchRow = {
+  id: number;
+  targetPrice: number | null;
+  genName: string;
+  modelName: string;
+  makeName: string;
+  makeSlug: string;
+  modelSlug: string;
+  genSlug: string;
+  p25: number | null;
+  median: number | null;
+  p75: number | null;
+  status: "below" | "in_range" | "above" | "no_target";
+};
+
+const items: WatchRow[] = [];
+
+for (const raw of watchRaw ?? []) {
+  const gen = raw.generations as unknown as {
+    name_es: string;
+    name_en: string;
+    slug: string;
+    models: {
+      name_es: string;
+      name_en: string;
+      slug: string;
+      makes: { name_es: string; name_en: string; slug: string };
+    };
+  };
+
+  const genName = locale === "es" ? gen.name_es : gen.name_en;
+  const modelName = locale === "es" ? gen.models.name_es : gen.models.name_en;
+  const makeName = locale === "es" ? gen.models.makes.name_es : gen.models.makes.name_en;
+
+  // Get aggregate stats (last 30 days, all buckets merged via simple average of medians)
+  const { data: priceRows } = await supabase
+    .from("price_aggregates_daily")
+    .select("p25, median, p75, count")
+    .eq("generation_id", raw.generation_id)
+    .eq("currency", "EUR")
+    .gte("date", thirtyDaysAgo)
+    .order("date", { ascending: false })
+    .limit(30);
+
+  // Compute weighted market stats
+  let totalCount = 0;
+  let weightedP25 = 0;
+  let weightedMedian = 0;
+  let weightedP75 = 0;
+
+  for (const r of priceRows ?? []) {
+    const c = r.count ?? 0;
+    totalCount += c;
+    weightedP25 += (r.p25 ?? 0) * c;
+    weightedMedian += (r.median ?? 0) * c;
+    weightedP75 += (r.p75 ?? 0) * c;
+  }
+
+  let p25: number | null = null;
+  let median: number | null = null;
+  let p75: number | null = null;
+
+  if (totalCount > 0) {
+    p25 = Math.round(weightedP25 / totalCount);
+    median = Math.round(weightedMedian / totalCount);
+    p75 = Math.round(weightedP75 / totalCount);
+  } else if ((priceRows ?? []).length > 0) {
+    // fallback: simple mean — priceRows is non-null because length > 0 was checked above
+    // biome-ignore lint/style/noNonNullAssertion: length > 0 check above guarantees non-null
+    const rows = priceRows!;
+    p25 = Math.round(rows.reduce((s, r) => s + (r.p25 ?? 0), 0) / rows.length);
+    median = Math.round(rows.reduce((s, r) => s + (r.median ?? 0), 0) / rows.length);
+    p75 = Math.round(rows.reduce((s, r) => s + (r.p75 ?? 0), 0) / rows.length);
+  }
+
+  const target = raw.target_price_eur;
+  let status: WatchRow["status"] = "no_target";
+  if (target !== null && median !== null) {
+    if (p75 !== null && target > p75) status = "below";
+    else if (p25 !== null && target < p25) status = "above";
+    else status = "in_range";
+  }
+
+  items.push({
+    id: raw.id,
+    targetPrice: target,
+    genName,
+    modelName,
+    makeName,
+    makeSlug: gen.models.makes.slug,
+    modelSlug: gen.models.slug,
+    genSlug: gen.slug,
+    p25,
+    median,
+    p75,
+    status,
+  });
+}
+
+function fmtPrice(n: number | null) {
+  if (n === null) return "—";
+  return new Intl.NumberFormat(locale === "es" ? "es-ES" : "en-GB", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
+const statusConfig = {
+  below: {
+    label: tr("watchlist.status.below"),
+    cls: "bg-green-500/15 text-green-400 border-green-500/30",
+  },
+  in_range: {
+    label: tr("watchlist.status.in_range"),
+    cls: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  },
+  above: {
+    label: tr("watchlist.status.above"),
+    cls: "bg-red-500/15 text-red-400 border-red-500/30",
+  },
+  no_target: {
+    label: tr("watchlist.status.no_target"),
+    cls: "bg-[var(--color-border)]/30 text-[var(--color-muted)] border-[var(--color-border)]",
+  },
+} as const;
+
+const path = `/${locale}/account/watchlist`;
+---
+
+<BaseLayout title={tr("watchlist.title") + " | Jinba"} description={tr("watchlist.title")} locale={locale} path={path} noindex>
+  <HomeNav locale={locale} />
+  <main class="mx-auto max-w-5xl px-4 py-12">
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <a href={`/${locale}/account/`} class="mb-1 block text-sm text-[var(--color-muted)] hover:text-[var(--color-fg)]">
+          &larr; {tr("account.title")}
+        </a>
+        <h1 class="text-2xl font-bold">{tr("watchlist.title")}</h1>
+      </div>
+      <a
+        href={`/${locale}/account/watchlist/add`}
+        class="rounded-[var(--radius)] bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-accent-fg)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+      >
+        + {tr("watchlist.add")}
+      </a>
+    </div>
+
+    {items.length === 0 ? (
+      <p class="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] px-6 py-10 text-center text-[var(--color-muted)]">
+        {tr("watchlist.empty")}
+      </p>
+    ) : (
+      <div class="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)]">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-[var(--color-border)] bg-[var(--color-card)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+              <th class="px-4 py-3">{tr("watchlist.col.model")}</th>
+              <th class="px-4 py-3">{tr("watchlist.col.target")}</th>
+              <th class="px-4 py-3">{tr("watchlist.col.market")}</th>
+              <th class="px-4 py-3">{tr("watchlist.col.status")}</th>
+              <th class="px-4 py-3">{tr("watchlist.col.actions")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item, idx) => {
+              const sc = statusConfig[item.status];
+              return (
+                <tr class={`border-b border-[var(--color-border)] last:border-0 ${idx % 2 === 1 ? "bg-[var(--color-card)]/40" : ""}`}>
+                  <td class="px-4 py-3 font-medium">
+                    <a
+                      href={`/${locale}/${item.makeSlug}/${item.modelSlug}/${item.genSlug}/`}
+                      class="hover:text-[var(--color-accent)]"
+                    >
+                      {item.makeName} {item.modelName}
+                      <span class="ml-1 text-xs text-[var(--color-muted)]">{item.genName}</span>
+                    </a>
+                  </td>
+                  <td class="px-4 py-3 tabular-nums">{fmtPrice(item.targetPrice)}</td>
+                  <td class="px-4 py-3 tabular-nums text-[var(--color-muted)]">
+                    {fmtPrice(item.p25)} / {fmtPrice(item.median)} / {fmtPrice(item.p75)}
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${sc.cls}`}>
+                      {sc.label}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                      <a
+                        href={`/${locale}/account/watchlist/${item.id}/edit`}
+                        class="text-[var(--color-muted)] underline hover:text-[var(--color-fg)]"
+                      >
+                        {tr("garage.action.edit")}
+                      </a>
+                      <form method="POST" action={`/${locale}/account/watchlist/${item.id}/delete`}>
+                        <button
+                          type="submit"
+                          onclick="return confirm(this.dataset.confirm)"
+                          data-confirm={tr("garage.delete.confirm")}
+                          class="text-[var(--color-muted)] underline hover:text-red-400"
+                        >
+                          {tr("garage.action.delete")}
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </main>
+</BaseLayout>

@@ -1,0 +1,42 @@
+---
+/**
+ * src/pages/[lang]/account/watchlist/quick-add.astro — F2 Batch 5
+ * POST-only. Reads gen_id from form body; upserts (user_id, generation_id).
+ * Redirects back to referer on success (or to watchlist if no referer).
+ */
+export const prerender = false;
+
+const lang = Astro.params.lang as string;
+if (lang !== "es" && lang !== "en") {
+  return Astro.redirect("/404");
+}
+
+if (Astro.request.method !== "POST") {
+  return Astro.redirect(`/${lang}/account/watchlist`);
+}
+
+import { requireAuth } from "@/lib/auth";
+
+const result = await requireAuth(Astro);
+if (result instanceof Response) return result;
+const { user } = result;
+
+// supabase is guaranteed by requireAuth having succeeded above
+// biome-ignore lint/style/noNonNullAssertion: requireAuth ensures supabase is defined
+const supabase = Astro.locals.supabase!;
+const form = await Astro.request.formData();
+const genIdRaw = form.get("gen_id");
+const generationId = genIdRaw ? Number.parseInt(genIdRaw as string, 10) : null;
+
+if (generationId) {
+  await supabase
+    .from("user_watchlist")
+    .upsert(
+      { user_id: user.id, generation_id: generationId },
+      { onConflict: "user_id,generation_id" }
+    );
+}
+
+const referer = Astro.request.headers.get("referer") ?? `/${lang}/account/watchlist`;
+return Astro.redirect(referer);
+---
