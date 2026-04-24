@@ -1,0 +1,219 @@
+---
+/**
+ * src/pages/[lang]/account/garage.astro — F2 Batch 4
+ * Lists user's cars with current market median and delta vs purchase price.
+ */
+export const prerender = false;
+
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { requireAuth } from "@/lib/auth";
+import { weightedMedian } from "@/lib/price-estimate";
+
+const lang = Astro.params.lang as string;
+if (lang !== "es" && lang !== "en") {
+  return Astro.redirect("/404");
+}
+const locale = lang as Locale;
+const tr = t(locale);
+
+const result = await requireAuth(Astro);
+if (result instanceof Response) return result;
+const { user } = result;
+
+// supabase is guaranteed by requireAuth having succeeded above
+// biome-ignore lint/style/noNonNullAssertion: requireAuth ensures supabase is defined
+const supabase = Astro.locals.supabase!;
+
+// Fetch user's cars with generation + model + make names
+const { data: carsRaw } = await supabase
+  .from("user_cars")
+  .select(
+    "id, year, km, purchased_at, purchase_price_eur, notes, generation_id, generations!inner(name_es, name_en, models!inner(name_es, name_en, makes!inner(name_es, name_en)))"
+  )
+  .eq("user_id", user.id)
+  .order("created_at", { ascending: false });
+
+// For each car, get current market median from price_aggregates_daily (last 30 days)
+const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+type CarRow = {
+  id: number;
+  year: number;
+  km: number | null;
+  purchased_at: string | null;
+  purchase_price_eur: number | null;
+  notes: string | null;
+  generation_id: number;
+  genName: string;
+  modelName: string;
+  makeName: string;
+  currentMedian: number | null;
+  delta: number | null;
+  deltaPercent: number | null;
+};
+
+const cars: CarRow[] = [];
+
+for (const raw of carsRaw ?? []) {
+  // Cast the nested join shape
+  const gen = raw.generations as unknown as {
+    name_es: string;
+    name_en: string;
+    models: { name_es: string; name_en: string; makes: { name_es: string; name_en: string } };
+  };
+
+  const genName = locale === "es" ? gen.name_es : gen.name_en;
+  const modelName = locale === "es" ? gen.models.name_es : gen.models.name_en;
+  const makeName = locale === "es" ? gen.models.makes.name_es : gen.models.makes.name_en;
+
+  // Fetch price aggregates for this generation in the last 30 days
+  const { data: priceRows } = await supabase
+    .from("price_aggregates_daily")
+    .select("median, count")
+    .eq("generation_id", raw.generation_id)
+    .eq("currency", "EUR")
+    .gte("date", thirtyDaysAgo);
+
+  const currentMedian = weightedMedian(
+    (priceRows ?? []).map((r) => ({ median: r.median, count: r.count }))
+  );
+
+  let delta: number | null = null;
+  let deltaPercent: number | null = null;
+  if (currentMedian !== null && raw.purchase_price_eur !== null && raw.purchase_price_eur > 0) {
+    delta = currentMedian - raw.purchase_price_eur;
+    deltaPercent = Math.round((delta / raw.purchase_price_eur) * 100);
+  }
+
+  cars.push({
+    id: raw.id,
+    year: raw.year,
+    km: raw.km,
+    purchased_at: raw.purchased_at,
+    purchase_price_eur: raw.purchase_price_eur,
+    notes: raw.notes,
+    generation_id: raw.generation_id,
+    genName,
+    modelName,
+    makeName,
+    currentMedian,
+    delta,
+    deltaPercent,
+  });
+}
+
+function fmtPrice(n: number | null) {
+  if (n === null) return "—";
+  return new Intl.NumberFormat(locale === "es" ? "es-ES" : "en-GB", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
+function fmtKm(n: number | null) {
+  if (n === null) return "—";
+  return `${new Intl.NumberFormat(locale === "es" ? "es-ES" : "en-GB").format(n)} km`;
+}
+
+function fmtDate(s: string | null) {
+  if (!s) return "—";
+  return new Date(s).toLocaleDateString(locale === "es" ? "es-ES" : "en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+const path = `/${locale}/account/garage`;
+---
+
+<BaseLayout title={tr("garage.title") + " | Jinba"} description={tr("garage.title")} locale={locale} path={path} noindex>
+  <HomeNav locale={locale} />
+  <main class="mx-auto max-w-5xl px-4 py-12">
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <a href={`/${locale}/account/`} class="mb-1 block text-sm text-[var(--color-muted)] hover:text-[var(--color-fg)]">
+          &larr; {tr("account.title")}
+        </a>
+        <h1 class="text-2xl font-bold">{tr("garage.title")}</h1>
+      </div>
+      <a
+        href={`/${locale}/account/garage/add`}
+        class="rounded-[var(--radius)] bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-accent-fg)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+      >
+        + {tr("garage.add")}
+      </a>
+    </div>
+
+    {cars.length === 0 ? (
+      <p class="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] px-6 py-10 text-center text-[var(--color-muted)]">
+        {tr("garage.empty")}
+      </p>
+    ) : (
+      <div class="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)]">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-[var(--color-border)] bg-[var(--color-card)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+              <th class="px-4 py-3">{tr("garage.col.model")}</th>
+              <th class="px-4 py-3">{tr("garage.col.year")}</th>
+              <th class="px-4 py-3">{tr("garage.col.km")}</th>
+              <th class="px-4 py-3">{tr("garage.col.purchased")}</th>
+              <th class="px-4 py-3">{tr("garage.col.price")}</th>
+              <th class="px-4 py-3">{tr("garage.col.current")}</th>
+              <th class="px-4 py-3">{tr("garage.col.delta")}</th>
+              <th class="px-4 py-3">{tr("garage.col.actions")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cars.map((car, idx) => (
+              <tr class={`border-b border-[var(--color-border)] last:border-0 ${idx % 2 === 1 ? "bg-[var(--color-card)]/40" : ""}`}>
+                <td class="px-4 py-3 font-medium">
+                  {car.makeName} {car.modelName}
+                  <span class="ml-1 text-xs text-[var(--color-muted)]">{car.genName}</span>
+                </td>
+                <td class="px-4 py-3 tabular-nums">{car.year}</td>
+                <td class="px-4 py-3 tabular-nums">{fmtKm(car.km)}</td>
+                <td class="px-4 py-3">{fmtDate(car.purchased_at)}</td>
+                <td class="px-4 py-3 tabular-nums">{fmtPrice(car.purchase_price_eur)}</td>
+                <td class="px-4 py-3 tabular-nums">{fmtPrice(car.currentMedian)}</td>
+                <td class="px-4 py-3 tabular-nums">
+                  {car.delta === null ? (
+                    <span class="text-[var(--color-muted)]">—</span>
+                  ) : car.delta >= 0 ? (
+                    <span class="text-green-400">+{fmtPrice(car.delta)} ({car.deltaPercent !== null ? `+${car.deltaPercent}%` : ""})</span>
+                  ) : (
+                    <span class="text-red-400">{fmtPrice(car.delta)} ({car.deltaPercent !== null ? `${car.deltaPercent}%` : ""})</span>
+                  )}
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <a
+                      href={`/${locale}/account/garage/${car.id}/edit`}
+                      class="text-[var(--color-muted)] underline hover:text-[var(--color-fg)]"
+                    >
+                      {tr("garage.action.edit")}
+                    </a>
+                    <form method="POST" action={`/${locale}/account/garage/${car.id}/delete`}>
+                      <button
+                        type="submit"
+                        onclick="return confirm(this.dataset.confirm)"
+                        data-confirm={tr("garage.delete.confirm")}
+                        class="text-[var(--color-muted)] underline hover:text-red-400"
+                      >
+                        {tr("garage.action.delete")}
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </main>
+</BaseLayout>

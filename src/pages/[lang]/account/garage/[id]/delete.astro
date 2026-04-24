@@ -1,0 +1,65 @@
+---
+/**
+ * src/pages/[lang]/account/garage/[id]/delete.astro — F2 Batch 4
+ * POST: deletes the car and redirects to garage list.
+ * GET: confirmation page with POST form.
+ */
+export const prerender = false;
+
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { requireAuth } from "@/lib/auth";
+
+const lang = Astro.params.lang as string;
+if (lang !== "es" && lang !== "en") {
+  return Astro.redirect("/404");
+}
+const locale = lang as Locale;
+const tr = t(locale);
+
+const carId = Number.parseInt(Astro.params.id as string, 10);
+if (!carId) return Astro.redirect(`/${locale}/account/garage`);
+
+const result = await requireAuth(Astro);
+if (result instanceof Response) return result;
+const { user } = result;
+
+// supabase is guaranteed by requireAuth having succeeded above
+// biome-ignore lint/style/noNonNullAssertion: requireAuth ensures supabase is defined
+const supabase = Astro.locals.supabase!;
+
+if (Astro.request.method === "POST") {
+  await supabase.from("user_cars").delete().eq("id", carId).eq("user_id", user.id);
+
+  return Astro.redirect(`/${locale}/account/garage`);
+}
+
+const path = `/${locale}/account/garage/${carId}/delete`;
+---
+
+<BaseLayout title={tr("garage.delete_title") + " | Jinba"} description={tr("garage.delete_title")} locale={locale} path={path} noindex>
+  <HomeNav locale={locale} />
+  <main class="mx-auto max-w-md px-4 py-16 text-center">
+    <h1 class="mb-6 text-2xl font-bold">{tr("garage.delete_title")}</h1>
+    <p class="mb-8 text-[var(--color-muted)]">{tr("garage.delete.confirm")}</p>
+
+    <div class="flex items-center justify-center gap-4">
+      <a
+        href={`/${locale}/account/garage`}
+        class="rounded-[var(--radius)] border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-muted)] hover:text-[var(--color-fg)]"
+      >
+        {locale === "es" ? "Cancelar" : "Cancel"}
+      </a>
+      <form method="POST">
+        <button
+          type="submit"
+          class="rounded-[var(--radius)] bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+        >
+          {tr("garage.action.delete")}
+        </button>
+      </form>
+    </div>
+  </main>
+</BaseLayout>

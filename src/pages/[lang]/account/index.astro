@@ -1,0 +1,76 @@
+---
+/**
+ * src/pages/[lang]/account/index.astro — F2 Batch 4
+ * Account home. Requires auth. Shows profile info + links to garage/watchlist.
+ */
+export const prerender = false;
+
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { isAdmin, requireAuth } from "@/lib/auth";
+
+const lang = Astro.params.lang as string;
+if (lang !== "es" && lang !== "en") {
+  return Astro.redirect("/404");
+}
+const locale = lang as Locale;
+const tr = t(locale);
+
+const result = await requireAuth(Astro);
+if (result instanceof Response) return result;
+const { user, profile } = result;
+
+const displayName = profile.display_name ?? user.email ?? "—";
+const path = `/${locale}/account/`;
+---
+
+<BaseLayout title={tr("account.title") + " | Jinba"} description={tr("account.title")} locale={locale} path={path} noindex>
+  <HomeNav locale={locale} />
+  <main class="mx-auto max-w-2xl px-4 py-12">
+    <h1 class="mb-2 text-2xl font-bold">{tr("account.title")}</h1>
+    <p class="mb-8 text-[var(--color-muted)]">
+      {tr("account.welcome").replace("{name}", displayName)}
+    </p>
+
+    <div class="space-y-3">
+      <a
+        href={`/${locale}/account/garage`}
+        class="flex items-center justify-between rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] px-5 py-4 transition-colors hover:border-[var(--color-accent)]"
+      >
+        <span class="font-medium">{tr("account.garage_link")}</span>
+        <span class="text-[var(--color-muted)]">&rsaquo;</span>
+      </a>
+
+      <a
+        href={`/${locale}/account/watchlist`}
+        class="flex items-center justify-between rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] px-5 py-4 transition-colors hover:border-[var(--color-accent)]"
+      >
+        <span class="font-medium">{tr("account.watchlist_link")}</span>
+        <span class="text-[var(--color-muted)]">&rsaquo;</span>
+      </a>
+
+      {isAdmin(profile) && (
+        <a
+          href="/admin/users"
+          class="flex items-center justify-between rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] px-5 py-4 transition-colors hover:border-[var(--color-accent)]"
+        >
+          <span class="font-medium">{tr("account.admin_link")}</span>
+          <span class="text-[var(--color-muted)]">&rsaquo;</span>
+        </a>
+      )}
+    </div>
+
+    <div class="mt-10">
+      <form method="POST" action={`/${locale}/auth/logout`}>
+        <button
+          type="submit"
+          class="rounded-[var(--radius)] border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-muted)] transition-colors hover:border-[var(--color-accent-hot)] hover:text-[var(--color-fg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+        >
+          {tr("account.logout")}
+        </button>
+      </form>
+    </div>
+  </main>
+</BaseLayout>

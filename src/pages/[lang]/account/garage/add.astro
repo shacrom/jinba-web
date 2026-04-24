@@ -1,0 +1,162 @@
+---
+/**
+ * src/pages/[lang]/account/garage/add.astro — F2 Batch 4
+ * Form to add a car to the user's garage. GET: render form. POST: insert.
+ */
+export const prerender = false;
+
+import HomeNav from "@/components/home/HomeNav.astro";
+import type { Locale } from "@/i18n/config";
+import { t } from "@/i18n/en";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { requireAuth } from "@/lib/auth";
+
+const lang = Astro.params.lang as string;
+if (lang !== "es" && lang !== "en") {
+  return Astro.redirect("/404");
+}
+const locale = lang as Locale;
+const tr = t(locale);
+
+const result = await requireAuth(Astro);
+if (result instanceof Response) return result;
+const { user } = result;
+
+// supabase is guaranteed by requireAuth having succeeded above
+// biome-ignore lint/style/noNonNullAssertion: requireAuth ensures supabase is defined
+const supabase = Astro.locals.supabase!;
+
+// Load all generations for the dropdown (anon-readable)
+const { data: generations } = await supabase
+  .from("generations")
+  .select(
+    "id, name_es, name_en, year_start, year_end, models!inner(name_es, name_en, makes!inner(name_es, name_en))"
+  )
+  .order("id");
+
+type GenOption = {
+  id: number;
+  label: string;
+};
+
+const genOptions: GenOption[] = (generations ?? []).map((g) => {
+  const gen = g as unknown as {
+    id: number;
+    name_es: string;
+    name_en: string;
+    year_start: number;
+    year_end: number | null;
+    models: { name_es: string; name_en: string; makes: { name_es: string; name_en: string } };
+  };
+  const makeName = locale === "es" ? gen.models.makes.name_es : gen.models.makes.name_en;
+  const modelName = locale === "es" ? gen.models.name_es : gen.models.name_en;
+  const genName = locale === "es" ? gen.name_es : gen.name_en;
+  const years = gen.year_end ? `${gen.year_start}–${gen.year_end}` : `${gen.year_start}–`;
+  return { id: gen.id, label: `${makeName} ${modelName} ${genName} (${years})` };
+});
+
+// Pre-fill from query param (from model detail page "Add to garage" button)
+const preselectedGenId = Astro.url.searchParams.get("gen_id") ?? "";
+
+let errorMsg: string | null = null;
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const generationId = Number.parseInt(form.get("generation_id") as string, 10);
+  const year = Number.parseInt(form.get("year") as string, 10);
+  const km = form.get("km") ? Number.parseInt(form.get("km") as string, 10) : null;
+  const purchasedAt = (form.get("purchased_at") as string | null) || null;
+  const purchasePriceEur = form.get("purchase_price_eur")
+    ? Number.parseFloat(form.get("purchase_price_eur") as string)
+    : null;
+  const notes = (form.get("notes") as string | null)?.trim() || null;
+
+  if (!generationId || !year) {
+    errorMsg =
+      locale === "es" ? "Rellena los campos obligatorios." : "Fill in the required fields.";
+  } else {
+    const { error } = await supabase.from("user_cars").insert({
+      user_id: user.id,
+      generation_id: generationId,
+      year,
+      km,
+      purchased_at: purchasedAt,
+      purchase_price_eur: purchasePriceEur,
+      notes,
+    });
+
+    if (error) {
+      errorMsg = locale === "es" ? "No se pudo guardar el coche." : "Could not save the car.";
+    } else {
+      return Astro.redirect(`/${locale}/account/garage`);
+    }
+  }
+}
+
+const inputClass =
+  "w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--color-fg)] placeholder:text-[var(--color-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]";
+
+const path = `/${locale}/account/garage/add`;
+---
+
+<BaseLayout title={tr("garage.add_title") + " | Jinba"} description={tr("garage.add_title")} locale={locale} path={path} noindex>
+  <HomeNav locale={locale} />
+  <main class="mx-auto max-w-lg px-4 py-12">
+    <div class="mb-6">
+      <a href={`/${locale}/account/garage`} class="mb-1 block text-sm text-[var(--color-muted)] hover:text-[var(--color-fg)]">
+        &larr; {tr("garage.title")}
+      </a>
+      <h1 class="text-2xl font-bold">{tr("garage.add_title")}</h1>
+    </div>
+
+    {errorMsg && (
+      <div role="alert" class="mb-6 rounded border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        {errorMsg}
+      </div>
+    )}
+
+    <form method="POST" class="space-y-5">
+      <div class="flex flex-col gap-1.5">
+        <label for="generation_id" class="text-sm font-medium">{tr("garage.form.generation")}</label>
+        <select id="generation_id" name="generation_id" required class={inputClass}>
+          <option value="">—</option>
+          {genOptions.map((g) => (
+            <option value={g.id} selected={String(g.id) === preselectedGenId}>{g.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="year" class="text-sm font-medium">{tr("garage.form.year")}</label>
+        <input id="year" name="year" type="number" required min="1900" max={new Date().getFullYear()} class={inputClass} />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="km" class="text-sm font-medium">{tr("garage.form.km")}</label>
+        <input id="km" name="km" type="number" min="0" class={inputClass} />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="purchased_at" class="text-sm font-medium">{tr("garage.form.purchased_at")}</label>
+        <input id="purchased_at" name="purchased_at" type="date" class={inputClass} />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="purchase_price_eur" class="text-sm font-medium">{tr("garage.form.purchase_price")}</label>
+        <input id="purchase_price_eur" name="purchase_price_eur" type="number" min="0" step="1" class={inputClass} />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="notes" class="text-sm font-medium">{tr("garage.form.notes")}</label>
+        <textarea id="notes" name="notes" rows="3" class={inputClass}></textarea>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full rounded-[var(--radius)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent-fg)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+      >
+        {tr("garage.form.submit")}
+      </button>
+    </form>
+  </main>
+</BaseLayout>
